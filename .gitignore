@@ -13,7 +13,6 @@ coverage/
 /.vscode/
 /.idea/
 /.trae/
-/data.sqlite
 /public/*.map
 /SPUDS-Inventory-System/
 /.vercel/
