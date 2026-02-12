@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPUDS Inventory</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header>
+    <h1>SPUDS Inventory</h1>
+  </header>
+  <main style="grid-template-columns: 300px 1fr;">
+    <aside>
+      <div class="aside-title">Search Filters</div>
+      <form id="searchForm">
+        <input name="q" placeholder="Item Name/Code" />
+        <input name="description" placeholder="Description" />
+        <input name="category" placeholder="Category" />
+        <button type="submit">Refresh</button>
+      </form>
+      <div class="separator"></div>
+      <div class="aside-title">Categories</div>
+      <div id="categoryList"></div>
+      <div class="separator"></div>
+      <div class="aside-title">Item List</div>
+      <div id="itemList"></div>
+    </aside>
+    <section>
+      <div class="tabs">
+        <div class="tab active" data-tab="product-info">Product Info</div>
+        <div class="tab" data-tab="extra-info">Extra Info</div>
+        <div class="tab" data-tab="product-vendors">Product Vendors</div>
+        <div class="tab" data-tab="movement-history">Movement History</div>
+        <div class="tab" data-tab="serial-numbers">Serial Numbers</div>
+        <div class="tab" data-tab="batches">Batches</div>
+        <div class="tab" data-tab="order-history">Order History</div>
+      </div>
+      <div id="product-info" class="tab-panel active">
+        <h2>Products</h2>
+        <div id="products"></div>
+        <div class="metrics">
+          <div class="metric"><div class="metric-label">On Hand</div><div class="metric-value" id="qtyOnHand">0</div></div>
+          <div class="metric"><div class="metric-label">Reserved</div><div class="metric-value" id="qtyReserved">0</div></div>
+          <div class="metric"><div class="metric-label">On Order</div><div class="metric-value" id="qtyOnOrder">0</div></div>
+          <div class="metric"><div class="metric-label">Available</div><div class="metric-value" id="qtyAvailable">0</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px;">
+          <div>
+            <h2>Add Product</h2>
+            <form id="addProductForm">
+              <input name="sku" placeholder="SKU" required />
+              <input name="name" placeholder="Name" required />
+              <select name="item_type">
+                <option value="Stock">Stock</option>
+                <option value="Non-Stock">Non-Stock</option>
+                <option value="Service">Service</option>
+              </select>
+              <label style="display:flex;align-items:center;gap:6px;">
+                <input name="active" type="checkbox" checked /> Active
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;">
+                <select name="tracking_method">
+                  <option value="none">No Tracking</option>
+                  <option value="serial">Serial</option>
+                  <option value="batch">Batch</option>
+                </select>
+              </label>
+              <input name="categories" placeholder="Categories (comma-separated)" />
+              <input name="barcode" placeholder="Barcode" />
+              <input name="internal_code" placeholder="Internal Code" />
+              <input name="unit_cost" placeholder="Unit Cost" type="number" step="0.01" />
+              <input name="unit_price" placeholder="Unit Price" type="number" step="0.01" />
+              <input name="msrp" placeholder="MSRP" type="number" step="0.01" />
+              <input name="reorder_level" placeholder="Reorder Level" type="number" />
+              <input name="image_url" placeholder="Image URL" />
+              <textarea name="description" placeholder="Description" style="grid-column:span 2;height:80px;"></textarea>
+              <textarea name="notes" placeholder="Notes" style="grid-column:span 2;height:60px;"></textarea>
+              <button type="submit">Add</button>
+            </form>
+            <h2 style="margin-top:16px;">Inventory by Location</h2>
+            <div id="stockLevels"></div>
+          </div>
+          <div>
+            <h2>Picture</h2>
+            <img id="productImage" src="" alt="" style="width:100%;height:200px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;" />
+          </div>
+        </div>
+      </div>
+      <div id="extra-info" class="tab-panel">
+        <h2>Storage Info</h2>
+        <form id="storageInfoForm">
+          <input name="product_id" placeholder="Product ID" type="number" required />
+          <input name="default_location" placeholder="Default Location" />
+          <input name="default_sublocation" placeholder="Default Sublocation" />
+          <input name="reorder_point" placeholder="Reorder Point" type="number" />
+          <input name="reorder_quantity" placeholder="Reorder Quantity" type="number" />
+          <input name="last_vendor" placeholder="Last Vendor" />
+          <h2>Unit of Measure</h2>
+          <input name="standard_uom" placeholder="Standard UoM" />
+          <input name="sales_uom" placeholder="Sales UoM" />
+          <input name="purchasing_uom" placeholder="Purchasing UoM" />
+          <h2>Measurements</h2>
+          <input name="length" placeholder="Length" type="number" step="0.01" />
+          <input name="width" placeholder="Width" type="number" step="0.01" />
+          <input name="height" placeholder="Height" type="number" step="0.01" />
+          <input name="weight" placeholder="Weight" type="number" step="0.01" />
+          <h2>Sales & Costing</h2>
+          <input name="tax_code" placeholder="Tax Code" />
+          <input name="costing_method" placeholder="Costing Method" />
+          <button type="submit">Save Extra Info</button>
+        </form>
+        <h2>Bill of Materials</h2>
+        <form id="addBomForm">
+          <input name="product_id" placeholder="Product ID" type="number" required />
+          <input name="component_item" placeholder="Component Item" />
+          <input name="description" placeholder="Description" />
+          <input name="qty" placeholder="Qty" type="number" step="0.01" />
+          <input name="cost" placeholder="Cost" type="number" step="0.01" />
+          <button type="submit">Add BOM Item</button>
+        </form>
+        <div id="bomList"></div>
+      </div>
+      <div id="product-vendors" class="tab-panel">
+        <h2>Product Vendors</h2>
+        <form id="addVendorForm">
+          <input name="product_id" placeholder="Product ID" type="number" required />
+          <input name="vendor_name" placeholder="Vendor" required />
+          <input name="vendor_price" placeholder="Vendor's Price" type="number" step="0.01" />
+          <input name="vendor_product_code" placeholder="Vendor Product Code" />
+          <button type="submit">Add Vendor</button>
+        </form>
+        <div id="vendorList"></div>
+      </div>
+      <div id="movement-history" class="tab-panel">
+        <h2>Adjust Stock</h2>
+        <form id="adjustStockForm">
+          <input name="product_id" placeholder="Product ID" type="number" required />
+          <input name="delta" placeholder="Change Qty (+/-)" type="number" required />
+          <input name="location" placeholder="Location" value="Main" />
+          <input name="sublocation" placeholder="Sublocation" />
+          <input name="reason" placeholder="Reason" />
+          <input name="remarks" placeholder="Remarks" />
+          <input name="reference" placeholder="Reference" />
+          <input name="serials" placeholder="Serials (comma-separated)" />
+          <input name="batch_code" placeholder="Batch Code" />
+          <input name="batch_date" placeholder="Batch Date (YYYY-MM-DD)" />
+          <input name="expiration_date" placeholder="Expiration Date (YYYY-MM-DD)" />
+          <button type="submit">Apply</button>
+        </form>
+        <h2>Recent Movements</h2>
+        <div id="movements"></div>
+      </div>
+      <div id="serial-numbers" class="tab-panel">
+        <h2>Add Serial Number</h2>
+        <form id="addSerialForm">
+          <input name="product_id" placeholder="Product ID" type="number" required />
+          <input name="serial" placeholder="Serial Number" required />
+          <input name="location" placeholder="Location" value="Main" />
+          <input name="sublocation" placeholder="Sublocation" />
+          <select name="status">
+            <option value="in_stock">In Stock</option>
+            <option value="removed">Removed</option>
+          </select>
+          <button type="submit">Add Serial</button>
+        </form>
+        <h2>Serial Numbers</h2>
+        <div id="serialList"></div>
+      </div>
+      <div id="batches" class="tab-panel">
+        <h2>Add Batch</h2>
+        <form id="addBatchForm">
+          <input name="product_id" placeholder="Product ID" type="number" required />
+          <input name="batch_code" placeholder="Batch Code" />
+          <input name="batch_date" placeholder="Batch Date (YYYY-MM-DD)" required />
+          <input name="expiration_date" placeholder="Expiration Date (YYYY-MM-DD)" />
+          <input name="location" placeholder="Location" value="Main" />
+          <input name="sublocation" placeholder="Sublocation" />
+          <select name="status">
+            <option value="in_stock">In Stock</option>
+            <option value="removed">Removed</option>
+          </select>
+          <button type="submit">Add Batch</button>
+        </form>
+        <h2>Batches</h2>
+        <div id="batchList"></div>
+      </div>
+      <div id="order-history" class="tab-panel">
+        <h2>Order History</h2>
+        <div>Coming soon</div>
+      </div>
+      <section>
+      <h2>Add Product</h2>
+      <form id="addProductForm">
+        <input name="sku" placeholder="SKU" required />
+        <input name="name" placeholder="Name" required />
+        <input name="categories" placeholder="Categories (comma-separated)" />
+        <input name="barcode" placeholder="Barcode" />
+        <input name="internal_code" placeholder="Internal Code" />
+        <input name="unit_cost" placeholder="Unit Cost" type="number" step="0.01" />
+        <input name="unit_price" placeholder="Unit Price" type="number" step="0.01" />
+        <input name="msrp" placeholder="MSRP" type="number" step="0.01" />
+        <input name="length" placeholder="Length" type="number" step="0.01" />
+        <input name="width" placeholder="Width" type="number" step="0.01" />
+        <input name="height" placeholder="Height" type="number" step="0.01" />
+        <input name="weight" placeholder="Weight" type="number" step="0.01" />
+        <input name="vendor_name" placeholder="Vendor Name" />
+        <input name="vendor_sku" placeholder="Vendor SKU" />
+        <input name="vendor_lead_time_days" placeholder="Lead Time (days)" type="number" />
+        <input name="vendor_moq" placeholder="Minimum Order Qty" type="number" />
+        <input name="image_url" placeholder="Image URL" />
+        <input name="reorder_level" placeholder="Reorder Level" type="number" />
+        <button type="submit">Add</button>
+      </form>
+      <h2>Add Variant</h2>
+      <form id="addVariantForm">
+        <input name="product_id" placeholder="Product ID" type="number" required />
+        <input name="sku" placeholder="Variant SKU" />
+        <input name="barcode" placeholder="Variant Barcode" />
+        <input name="attributes" placeholder="Attributes JSON (e.g. {\"color\":\"Red\",\"size\":\"M\"})" />
+        <input name="unit_price" placeholder="Variant Price" type="number" step="0.01" />
+        <button type="submit">Add Variant</button>
+      </form>
+    </section>
+  </main>
+  <script src="/app.js"></script>
+  </body>
+</html>
