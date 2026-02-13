@@ -28,6 +28,7 @@
     </aside>
     <section>
       <div class="tabs">
+        <div class="tab" data-tab="dashboard">Dashboard</div>
         <div class="tab active" data-tab="product-info">Product Info</div>
         <div class="tab" data-tab="extra-info">Extra Info</div>
         <div class="tab" data-tab="product-vendors">Product Vendors</div>
@@ -35,6 +36,29 @@
         <div class="tab" data-tab="serial-numbers">Serial Numbers</div>
         <div class="tab" data-tab="batches">Batches</div>
         <div class="tab" data-tab="order-history">Order History</div>
+      </div>
+      <div id="dashboard" class="tab-panel">
+        <h2>Overview</h2>
+        <div class="dash-grid">
+          <div class="dash-card"><div class="metric-label">On Hand</div><div class="metric-value" id="dashOnHand">0</div></div>
+          <div class="dash-card"><div class="metric-label">Reserved</div><div class="metric-value" id="dashReserved">0</div></div>
+          <div class="dash-card"><div class="metric-label">On Order</div><div class="metric-value" id="dashOnOrder">0</div></div>
+          <div class="dash-card"><div class="metric-label">Available</div><div class="metric-value" id="dashAvailable">0</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-top:12px;">
+          <section>
+            <h2>Top Categories</h2>
+            <div id="dashTopCategories"></div>
+          </section>
+          <section>
+            <h2>Low Stock</h2>
+            <div id="dashLowStock"></div>
+          </section>
+        </div>
+        <section style="margin-top:12px;">
+          <h2>Recent Movements</h2>
+          <div id="dashMovements"></div>
+        </section>
       </div>
       <div id="product-info" class="tab-panel active">
         <h2>Products</h2>

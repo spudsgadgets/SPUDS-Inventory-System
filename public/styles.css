@@ -27,3 +27,5 @@ aside { background: #fff; border: 1px solid #d9dee7; border-radius: 6px; padding
 .metric { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; }
 .metric-label { font-size: 12px; color: #475569; }
 .metric-value { font-size: 16px; color: #0f172a; font-weight: 600; }
+.dash-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.dash-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 12px; }

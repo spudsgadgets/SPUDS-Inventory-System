@@ -311,6 +311,7 @@ async function refresh() {
   const cats = await api.categories();
   renderCategories(cats);
   renderItemList(products);
+  renderDashboard({ products, movements, categories: cats });
 }
 
 document.getElementById("addProductForm").addEventListener("submit", async (e) => {
@@ -565,3 +566,53 @@ if (batchForm) {
 
 initTabs();
 refresh();
+
+function renderDashboard({ products, movements, categories }) {
+  const onHand = products.reduce((sum, p) => sum + Number(p.qty || 0), 0);
+  const reserved = 0;
+  const onOrder = 0;
+  const available = onHand - reserved;
+  const elOnHand = document.getElementById("dashOnHand");
+  const elReserved = document.getElementById("dashReserved");
+  const elOnOrder = document.getElementById("dashOnOrder");
+  const elAvailable = document.getElementById("dashAvailable");
+  if (elOnHand) elOnHand.textContent = String(onHand);
+  if (elReserved) elReserved.textContent = String(reserved);
+  if (elOnOrder) elOnOrder.textContent = String(onOrder);
+  if (elAvailable) elAvailable.textContent = String(available);
+  const catCounts = {};
+  products.forEach(p => {
+    const names = (p.categories_text || p.category || "").split(",").map(s => s.trim()).filter(Boolean);
+    names.forEach(n => { catCounts[n] = (catCounts[n] || 0) + 1; });
+  });
+  const topCats = Object.entries(catCounts).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  const elTop = document.getElementById("dashTopCategories");
+  if (elTop) {
+    elTop.innerHTML = `
+      <table>
+        <thead><tr><th>Category</th><th>Items</th></tr></thead>
+        <tbody>${topCats.map(([n,c])=>`<tr><td>${n}</td><td>${c}</td></tr>`).join("")}</tbody>
+      </table>
+    `;
+  }
+  const low = products.filter(p => Number(p.qty||0) <= Number(p.reorder_level||0)).sort((a,b)=>Number(a.qty||0)-Number(b.qty||0)).slice(0,8);
+  const elLow = document.getElementById("dashLowStock");
+  if (elLow) {
+    elLow.innerHTML = `
+      <table>
+        <thead><tr><th>SKU</th><th>Name</th><th>Qty</th><th>Reorder</th></tr></thead>
+        <tbody>${low.map(p=>`<tr><td>${p.sku}</td><td>${p.name}</td><td>${p.qty}</td><td>${p.reorder_level||""}</td></tr>`).join("")}</tbody>
+      </table>
+    `;
+  }
+  const recent = movements.slice(0,10);
+  const elMov = document.getElementById("dashMovements");
+  if (elMov) {
+    elMov.innerHTML = `
+      <table>
+        <thead><tr><th>Product</th><th>Δ Qty</th><th>Location</th><th>At</th></tr></thead>
+        <tbody>${recent.map(m=>`<tr><td>${m.product_id}</td><td>${m.delta}</td><td>${m.location}</td><td>${m.created_at}</td></tr>`).join("")}</tbody>
+      </table>
+    `;
+  }
+}
