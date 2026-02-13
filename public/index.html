@@ -10,7 +10,65 @@
   <header>
     <h1>SPUDS Inventory</h1>
   </header>
-  <main style="grid-template-columns: 300px 1fr;">
+  <div class="topbar">
+    <div class="top-tabs">
+      <div class="top-tab active" data-top="home">Homepage</div>
+      <div class="top-tab" data-top="dashboard">Dashboard</div>
+    </div>
+  </div>
+  <div id="homePane">
+    <div class="dashboard-layout">
+      <div class="dashboard-main">
+        <div class="flow">
+          <div class="flow-step">
+            <div class="flow-icon">👥</div>
+            <div class="flow-title">VENDOR</div>
+          </div>
+          <div class="connector"></div>
+          <div class="flow-step">
+            <div class="flow-icon">🧾</div>
+            <div class="flow-title">Purchase Order</div>
+            <div class="flow-links">
+              <div data-action="new-order" class="flow-link">New Order</div>
+              <div data-action="order-list" class="flow-link">Order List</div>
+            </div>
+          </div>
+          <div class="connector"></div>
+          <div class="flow-step">
+            <div class="flow-icon">📦</div>
+            <div class="flow-title">INVENTORY</div>
+          </div>
+          <div class="connector"></div>
+          <div class="flow-step">
+            <div class="flow-icon">🧾</div>
+            <div class="flow-title">ORDER SLIP</div>
+          </div>
+          <div class="connector"></div>
+          <div class="flow-step">
+            <div class="flow-icon">🧑‍🤝‍🧑</div>
+            <div class="flow-title">CUSTOMER</div>
+          </div>
+        </div>
+      </div>
+      <aside class="dashboard-side">
+        <div class="aside-title">Shortcuts</div>
+        <div class="shortcut-list">
+          <div class="shortcut" data-tab-target="dashboard">Dashboard</div>
+          <div class="shortcut" data-tab-target="movement-history">Reports</div>
+          <div class="shortcut" data-tab-target="extra-info">Settings</div>
+          <div class="shortcut" data-action="import">Import</div>
+          <div class="shortcut" data-action="export">Export</div>
+        </div>
+        <div class="separator"></div>
+        <div class="aside-title">Inspiration</div>
+        <div class="inspiration">
+          <div>"The world is changing very fast. Big will not beat small anymore. It will be the fast beating the slow."</div>
+          <div style="margin-top:6px;">— Rupert Murdoch</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+  <main id="appPane" style="grid-template-columns: 300px 1fr;">
     <aside>
       <div class="aside-title">Search Filters</div>
       <form id="searchForm">
@@ -38,27 +96,77 @@
         <div class="tab" data-tab="order-history">Order History</div>
       </div>
       <div id="dashboard" class="tab-panel">
-        <h2>Overview</h2>
-        <div class="dash-grid">
-          <div class="dash-card"><div class="metric-label">On Hand</div><div class="metric-value" id="dashOnHand">0</div></div>
-          <div class="dash-card"><div class="metric-label">Reserved</div><div class="metric-value" id="dashReserved">0</div></div>
-          <div class="dash-card"><div class="metric-label">On Order</div><div class="metric-value" id="dashOnOrder">0</div></div>
-          <div class="dash-card"><div class="metric-label">Available</div><div class="metric-value" id="dashAvailable">0</div></div>
+        <div class="dashboard-layout">
+          <div class="dashboard-main">
+            <h2>Overview</h2>
+            <div class="dash-grid">
+              <div class="dash-card"><div class="metric-label">On Hand</div><div class="metric-value" id="dashOnHand">0</div></div>
+              <div class="dash-card"><div class="metric-label">Reserved</div><div class="metric-value" id="dashReserved">0</div></div>
+              <div class="dash-card"><div class="metric-label">On Order</div><div class="metric-value" id="dashOnOrder">0</div></div>
+              <div class="dash-card"><div class="metric-label">Available</div><div class="metric-value" id="dashAvailable">0</div></div>
+            </div>
+            <div class="flow">
+              <div class="flow-step">
+                <div class="flow-icon">👥</div>
+                <div class="flow-title">VENDOR</div>
+              </div>
+              <div class="connector"></div>
+              <div class="flow-step">
+                <div class="flow-icon">🧾</div>
+                <div class="flow-title">Purchase Order</div>
+                <div class="flow-links">
+                  <div data-action="new-order" class="flow-link">New Order</div>
+                  <div data-action="order-list" class="flow-link">Order List</div>
+                </div>
+              </div>
+              <div class="connector"></div>
+              <div class="flow-step">
+                <div class="flow-icon">📦</div>
+                <div class="flow-title">INVENTORY</div>
+              </div>
+              <div class="connector"></div>
+              <div class="flow-step">
+                <div class="flow-icon">🧾</div>
+                <div class="flow-title">ORDER SLIP</div>
+              </div>
+              <div class="connector"></div>
+              <div class="flow-step">
+                <div class="flow-icon">🧑‍🤝‍🧑</div>
+                <div class="flow-title">CUSTOMER</div>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-top:12px;">
+              <section>
+                <h2>Top Categories</h2>
+                <div id="dashTopCategories"></div>
+              </section>
+              <section>
+                <h2>Low Stock</h2>
+                <div id="dashLowStock"></div>
+              </section>
+            </div>
+            <section style="margin-top:12px;">
+              <h2>Recent Movements</h2>
+              <div id="dashMovements"></div>
+            </section>
+          </div>
+          <aside class="dashboard-side">
+            <div class="aside-title">Shortcuts</div>
+            <div class="shortcut-list">
+              <div class="shortcut" data-tab-target="dashboard">Dashboard</div>
+              <div class="shortcut" data-tab-target="movement-history">Reports</div>
+              <div class="shortcut" data-tab-target="extra-info">Settings</div>
+              <div class="shortcut" data-action="import">Import</div>
+              <div class="shortcut" data-action="export">Export</div>
+            </div>
+            <div class="separator"></div>
+            <div class="aside-title">Inspiration</div>
+            <div class="inspiration">
+              <div>"The world is changing very fast. Big will not beat small anymore. It will be the fast beating the slow."</div>
+              <div style="margin-top:6px;">— Rupert Murdoch</div>
+            </div>
+          </aside>
         </div>
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-top:12px;">
-          <section>
-            <h2>Top Categories</h2>
-            <div id="dashTopCategories"></div>
-          </section>
-          <section>
-            <h2>Low Stock</h2>
-            <div id="dashLowStock"></div>
-          </section>
-        </div>
-        <section style="margin-top:12px;">
-          <h2>Recent Movements</h2>
-          <div id="dashMovements"></div>
-        </section>
       </div>
       <div id="product-info" class="tab-panel active">
         <h2>Products</h2>

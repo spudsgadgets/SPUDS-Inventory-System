@@ -616,3 +616,59 @@ function renderDashboard({ products, movements, categories }) {
     `;
   }
 }
+
+document.addEventListener("click", (e) => {
+  const t = e.target;
+  if (t.classList.contains("shortcut") && t.dataset.tabTarget) {
+    const target = t.dataset.tabTarget;
+    const tabs = document.querySelectorAll(".tab");
+    const panels = document.querySelectorAll(".tab-panel");
+    tabs.forEach(x => x.classList.remove("active"));
+    panels.forEach(p => p.classList.remove("active"));
+    const tabEl = Array.from(tabs).find(x => x.dataset.tab === target);
+    if (tabEl) tabEl.classList.add("active");
+    const panelEl = document.getElementById(target);
+    if (panelEl) panelEl.classList.add("active");
+  }
+  if (t.classList.contains("shortcut") && t.dataset.action) {
+    const action = t.dataset.action;
+    if (action === "import") alert("Import coming soon");
+    if (action === "export") alert("Export coming soon");
+  }
+  if (t.classList.contains("flow-link") && t.dataset.action) {
+    const a = t.dataset.action;
+    if (a === "new-order") alert("New Purchase Order coming soon");
+    if (a === "order-list") alert("Purchase Orders list coming soon");
+  }
+});
+
+// Topbar tabs: toggle homepage vs app content
+(() => {
+  const topTabs = document.querySelectorAll(".top-tab");
+  const homePane = document.getElementById("homePane");
+  const appPane = document.getElementById("appPane");
+  function setActiveTop(name) {
+    topTabs.forEach(x => x.classList.toggle("active", x.dataset.top === name));
+    if (name === "home") {
+      if (homePane) homePane.style.display = "block";
+      if (appPane) appPane.style.display = "none";
+    } else {
+      if (homePane) homePane.style.display = "none";
+      if (appPane) appPane.style.display = "grid";
+      const tabEl = Array.from(document.querySelectorAll(".tab")).find(x => x.dataset.tab === "dashboard");
+      const panelEl = document.getElementById("dashboard");
+      const panels = document.querySelectorAll(".tab-panel");
+      const tabs = document.querySelectorAll(".tab");
+      if (tabEl && panelEl) {
+        tabs.forEach(x => x.classList.remove("active"));
+        panels.forEach(p => p.classList.remove("active"));
+        tabEl.classList.add("active");
+        panelEl.classList.add("active");
+      }
+    }
+  }
+  topTabs.forEach(t => {
+    t.addEventListener("click", () => setActiveTop(t.dataset.top));
+  });
+  setActiveTop("home");
+})();
