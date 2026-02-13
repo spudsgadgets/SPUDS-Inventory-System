@@ -23,6 +23,41 @@ if (fs.existsSync(dbFile)) {
       vendor_price REAL,
       vendor_product_code TEXT
     );`);
+    db.run(`CREATE TABLE IF NOT EXISTS customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      balance REAL DEFAULT 0,
+      contact TEXT,
+      phone TEXT,
+      fax TEXT,
+      email TEXT,
+      website TEXT,
+      currency TEXT DEFAULT 'Philippine Peso (Php)',
+      discount REAL DEFAULT 0,
+      payment_terms TEXT,
+      taxing_scheme TEXT,
+      tax_exempt_no TEXT,
+      business_address TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    );`);
+    db.run(`CREATE TABLE IF NOT EXISTS vendors (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      contact TEXT,
+      phone TEXT,
+      fax TEXT,
+      email TEXT,
+      website TEXT,
+      payment_terms TEXT,
+      taxing_scheme TEXT,
+      carrier TEXT,
+      currency TEXT DEFAULT 'Philippine Peso (Php)',
+      business_address TEXT,
+      balance REAL DEFAULT 0,
+      created_at TEXT,
+      updated_at TEXT
+    );`);
     db.run(`CREATE TABLE IF NOT EXISTS bom_items (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       product_id INTEGER NOT NULL,
@@ -105,6 +140,63 @@ if (fs.existsSync(dbFile)) {
   } catch {}
   try { db.run(`ALTER TABLE products RENAME COLUMN upc TO barcode`); } catch {}
   try { db.run(`ALTER TABLE product_variants RENAME COLUMN upc TO barcode`); } catch {}
+  try {
+    db.run(`
+      CREATE TABLE IF NOT EXISTS sales_orders (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_number TEXT UNIQUE,
+        customer TEXT,
+        status TEXT DEFAULT 'open',
+        total_amount REAL DEFAULT 0,
+        created_at TEXT
+      );
+    `);
+    db.run(`
+      CREATE TABLE IF NOT EXISTS sales_order_items (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        order_id INTEGER NOT NULL,
+        product_id INTEGER NOT NULL,
+        qty INTEGER NOT NULL,
+        unit_price REAL DEFAULT 0,
+        line_total REAL DEFAULT 0
+      );
+    `);
+    db.run(`
+      CREATE TABLE IF NOT EXISTS payments (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        type TEXT NOT NULL,
+        ref TEXT,
+        amount REAL NOT NULL,
+        status TEXT DEFAULT 'due',
+        created_at TEXT
+      );
+    CREATE TABLE IF NOT EXISTS purchase_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      po_number TEXT UNIQUE,
+      vendor TEXT,
+      status TEXT DEFAULT 'open',
+      date TEXT,
+      ship_to_address TEXT,
+      sub_total REAL DEFAULT 0,
+      freight REAL DEFAULT 0,
+      total REAL DEFAULT 0,
+      paid REAL DEFAULT 0,
+      created_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS purchase_order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      product_id INTEGER,
+      item TEXT,
+      description TEXT,
+      vendor_product_code TEXT,
+      qty INTEGER NOT NULL,
+      unit_price REAL DEFAULT 0,
+      discount REAL DEFAULT 0,
+      line_total REAL DEFAULT 0
+    );
+    `);
+  } catch {}
 } else {
   db = new SQL.Database();
   db.run(`
@@ -236,6 +328,73 @@ if (fs.existsSync(dbFile)) {
       description TEXT,
       qty REAL,
       cost REAL
+    );
+    CREATE TABLE IF NOT EXISTS sales_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_number TEXT UNIQUE,
+      customer TEXT,
+      status TEXT DEFAULT 'open',
+      total_amount REAL DEFAULT 0,
+      created_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS customers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT UNIQUE NOT NULL,
+      balance REAL DEFAULT 0,
+      contact TEXT,
+      phone TEXT,
+      fax TEXT,
+      email TEXT,
+      website TEXT,
+      currency TEXT DEFAULT 'Philippine Peso (Php)',
+      discount REAL DEFAULT 0,
+      payment_terms TEXT,
+      taxing_scheme TEXT,
+      tax_exempt_no TEXT,
+      business_address TEXT,
+      created_at TEXT,
+      updated_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS sales_order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      product_id INTEGER NOT NULL,
+      qty INTEGER NOT NULL,
+      unit_price REAL DEFAULT 0,
+      line_total REAL DEFAULT 0
+    );
+    CREATE TABLE IF NOT EXISTS payments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      type TEXT NOT NULL,
+      ref TEXT,
+      amount REAL NOT NULL,
+      status TEXT DEFAULT 'due',
+      created_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS purchase_orders (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      po_number TEXT UNIQUE,
+      vendor TEXT,
+      status TEXT DEFAULT 'open',
+      date TEXT,
+      ship_to_address TEXT,
+      sub_total REAL DEFAULT 0,
+      freight REAL DEFAULT 0,
+      total REAL DEFAULT 0,
+      paid REAL DEFAULT 0,
+      created_at TEXT
+    );
+    CREATE TABLE IF NOT EXISTS purchase_order_items (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      order_id INTEGER NOT NULL,
+      product_id INTEGER,
+      item TEXT,
+      description TEXT,
+      vendor_product_code TEXT,
+      qty INTEGER NOT NULL,
+      unit_price REAL DEFAULT 0,
+      discount REAL DEFAULT 0,
+      line_total REAL DEFAULT 0
     );
   `);
   persist();
@@ -561,6 +720,17 @@ export function listProductVendors(product_id) {
   return queryAll(`SELECT * FROM product_vendors WHERE product_id = ? ORDER BY vendor_name ASC`, [product_id]);
 }
 
+export function listAllVendors() {
+  return queryAll(
+    `SELECT vendor_name AS name, COUNT(*) AS product_count
+     FROM product_vendors
+     WHERE LENGTH(IFNULL(vendor_name,'')) > 0
+     GROUP BY vendor_name
+     ORDER BY vendor_name ASC`,
+    []
+  );
+}
+
 export function upsertProductVendor(product_id, payload = {}) {
   run(
     `INSERT INTO product_vendors (product_id, vendor_name, vendor_price, vendor_product_code)
@@ -683,4 +853,229 @@ export function addLot(product_id, payload = {}) {
     ]
   );
   return listLots(product_id);
+}
+
+export function createSalesOrder(payload = {}) {
+  const now = new Date().toISOString();
+  const order_number = String(payload.order_number || `SO-${Date.now()}`);
+  const customer = String(payload.customer || "Customer");
+  const status = String(payload.status || "completed");
+  run(
+    `INSERT INTO sales_orders (order_number, customer, status, total_amount, created_at)
+     VALUES (?, ?, ?, 0, ?)`,
+    [order_number, customer, status, now]
+  );
+  const order = queryAll(`SELECT * FROM sales_orders WHERE order_number = ?`, [order_number])[0];
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  let total = 0;
+  items.forEach(it => {
+    const qty = Number(it.qty || 0);
+    const unit_price = Number(it.unit_price || 0);
+    const line_total = qty * unit_price;
+    total += line_total;
+    run(
+      `INSERT INTO sales_order_items (order_id, product_id, qty, unit_price, line_total)
+       VALUES (?, ?, ?, ?, ?)`,
+      [order.id, Number(it.product_id || 0), qty, unit_price, line_total]
+    );
+  });
+  run(`UPDATE sales_orders SET total_amount = ? WHERE id = ?`, [total, order.id]);
+  return queryAll(`SELECT * FROM sales_orders WHERE id = ?`, [order.id])[0];
+}
+
+export function listSalesOrders() {
+  return queryAll(`SELECT * FROM sales_orders ORDER BY created_at DESC`, []);
+}
+
+export function listSalesOrderItems() {
+  return queryAll(`SELECT i.*, p.unit_cost, o.created_at AS order_created_at, o.status AS order_status
+                   FROM sales_order_items i
+                   JOIN products p ON p.id = i.product_id
+                   JOIN sales_orders o ON o.id = i.order_id
+                   ORDER BY i.id DESC`, []);
+}
+
+export function createPayment(payload = {}) {
+  run(
+    `INSERT INTO payments (type, ref, amount, status, created_at)
+     VALUES (?, ?, ?, ?, ?)`,
+    [String(payload.type || "customer"), String(payload.ref || ""), Number(payload.amount || 0), String(payload.status || "due"), new Date().toISOString()]
+  );
+  return queryAll(`SELECT * FROM payments ORDER BY id DESC LIMIT 1`, [])[0];
+}
+
+export function listPayments() {
+  return queryAll(`SELECT * FROM payments ORDER BY created_at DESC`, []);
+}
+
+export function createPurchaseOrder(payload = {}) {
+  const now = new Date().toISOString();
+  const po_number = String(payload.po_number || `PO-${Date.now()}`);
+  const vendor = String(payload.vendor || "");
+  const status = String(payload.status || "open");
+  const date = String(payload.date || new Date().toISOString());
+  const ship_to_address = String(payload.ship_to_address || "");
+  run(
+    `INSERT INTO purchase_orders (po_number, vendor, status, date, ship_to_address, sub_total, freight, total, paid, created_at)
+     VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0, ?)`,
+    [po_number, vendor, status, date, ship_to_address, now]
+  );
+  const order = queryAll(`SELECT * FROM purchase_orders WHERE po_number = ?`, [po_number])[0];
+  const items = Array.isArray(payload.items) ? payload.items : [];
+  let sub = 0;
+  items.forEach(it => {
+    const qty = Number(it.qty || 0);
+    const unit_price = Number(it.unit_price || 0);
+    const discount = Number(it.discount || 0);
+    const line_total = Math.max(0, qty * unit_price - discount);
+    sub += line_total;
+    run(
+      `INSERT INTO purchase_order_items (order_id, product_id, item, description, vendor_product_code, qty, unit_price, discount, line_total)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [order.id, Number(it.product_id || 0) || null, String(it.item || ""), String(it.description || ""), String(it.vendor_product_code || ""), qty, unit_price, discount, line_total]
+    );
+  });
+  const freight = Number(payload.freight || 0);
+  const total = sub + freight;
+  run(`UPDATE purchase_orders SET sub_total = ?, freight = ?, total = ? WHERE id = ?`, [sub, freight, total, order.id]);
+  return queryAll(`SELECT * FROM purchase_orders WHERE id = ?`, [order.id])[0];
+}
+
+export function listPurchaseOrders() {
+  return queryAll(`SELECT * FROM purchase_orders ORDER BY created_at DESC`, []);
+}
+
+export function listPurchaseOrderItems(order_id) {
+  return queryAll(`SELECT * FROM purchase_order_items WHERE order_id = ? ORDER BY id ASC`, [order_id]);
+}
+
+export function listVendors() {
+  return queryAll(`SELECT * FROM vendors ORDER BY name ASC`, []);
+}
+export function getVendor(id) {
+export function listCustomers() {
+  return queryAll(`SELECT * FROM customers ORDER BY name ASC`, []);
+}
+
+export function getCustomer(id) {
+  return queryAll(`SELECT * FROM customers WHERE id = ?`, [id])[0];
+}
+
+export function createCustomer(payload = {}) {
+  const now = new Date().toISOString();
+  const row = {
+    name: String(payload.name || "").trim(),
+    balance: Number(payload.balance || 0),
+    contact: String(payload.contact || ""),
+    phone: String(payload.phone || ""),
+    fax: String(payload.fax || ""),
+    email: String(payload.email || ""),
+    website: String(payload.website || ""),
+    currency: String(payload.currency || "Philippine Peso (Php)"),
+    discount: Number(payload.discount || 0),
+    payment_terms: String(payload.payment_terms || ""),
+    taxing_scheme: String(payload.taxing_scheme || ""),
+    tax_exempt_no: String(payload.tax_exempt_no || ""),
+    business_address: String(payload.business_address || ""),
+    created_at: now,
+    updated_at: now
+  };
+  run(
+    `INSERT INTO customers (name, balance, contact, phone, fax, email, website, currency, discount, payment_terms, taxing_scheme, tax_exempt_no, business_address, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      row.name, row.balance, row.contact, row.phone, row.fax, row.email, row.website, row.currency,
+      row.discount, row.payment_terms, row.taxing_scheme, row.tax_exempt_no, row.business_address,
+      row.created_at, row.updated_at
+    ]
+  );
+  return queryAll(`SELECT * FROM customers WHERE name = ?`, [row.name])[0];
+}
+
+export function updateCustomer(id, payload = {}) {
+  const existing = queryAll(`SELECT * FROM customers WHERE id = ?`, [id])[0];
+  if (!existing) throw new Error("Customer not found");
+  const now = new Date().toISOString();
+  const row = {
+    name: String(payload.name ?? existing.name).trim(),
+    balance: Number(payload.balance ?? existing.balance || 0),
+    contact: String(payload.contact ?? existing.contact || ""),
+    phone: String(payload.phone ?? existing.phone || ""),
+    fax: String(payload.fax ?? existing.fax || ""),
+    email: String(payload.email ?? existing.email || ""),
+    website: String(payload.website ?? existing.website || ""),
+    currency: String(payload.currency ?? existing.currency || "Philippine Peso (Php)"),
+    discount: Number(payload.discount ?? existing.discount || 0),
+    payment_terms: String(payload.payment_terms ?? existing.payment_terms || ""),
+    taxing_scheme: String(payload.taxing_scheme ?? existing.taxing_scheme || ""),
+    tax_exempt_no: String(payload.tax_exempt_no ?? existing.tax_exempt_no || ""),
+    business_address: String(payload.business_address ?? existing.business_address || ""),
+    updated_at: now
+  };
+  run(
+    `UPDATE customers
+     SET name = ?, balance = ?, contact = ?, phone = ?, fax = ?, email = ?, website = ?, currency = ?, discount = ?, payment_terms = ?, taxing_scheme = ?, tax_exempt_no = ?, business_address = ?, updated_at = ?
+     WHERE id = ?`,
+    [
+      row.name, row.balance, row.contact, row.phone, row.fax, row.email, row.website, row.currency,
+      row.discount, row.payment_terms, row.taxing_scheme, row.tax_exempt_no, row.business_address,
+      row.updated_at, id
+    ]
+  );
+  return queryAll(`SELECT * FROM customers WHERE id = ?`, [id])[0];
+}
+export function getVendor(id) {
+  return queryAll(`SELECT * FROM vendors WHERE id = ?`, [id])[0];
+}
+export function createVendor(payload = {}) {
+  const now = new Date().toISOString();
+  const v = {
+    name: String(payload.name || "").trim(),
+    contact: payload.contact || "",
+    phone: payload.phone || "",
+    fax: payload.fax || "",
+    email: payload.email || "",
+    website: payload.website || "",
+    payment_terms: payload.payment_terms || "",
+    taxing_scheme: payload.taxing_scheme || "",
+    carrier: payload.carrier || "",
+    currency: payload.currency || "Philippine Peso (Php)",
+    business_address: payload.business_address || "",
+    balance: Number(payload.balance || 0),
+    created_at: now,
+    updated_at: now
+  };
+  run(
+    `INSERT INTO vendors (name, contact, phone, fax, email, website, payment_terms, taxing_scheme, carrier, currency, business_address, balance, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [v.name, v.contact, v.phone, v.fax, v.email, v.website, v.payment_terms, v.taxing_scheme, v.carrier, v.currency, v.business_address, v.balance, v.created_at, v.updated_at]
+  );
+  return queryAll(`SELECT * FROM vendors WHERE name = ?`, [v.name])[0];
+}
+export function updateVendor(id, payload = {}) {
+  const existing = getVendor(id);
+  if (!existing) throw new Error("Vendor not found");
+  const now = new Date().toISOString();
+  const v = {
+    name: String((payload.name !== undefined && payload.name !== null) ? payload.name : existing.name).trim(),
+    contact: (payload.contact !== undefined && payload.contact !== null) ? payload.contact : existing.contact,
+    phone: (payload.phone !== undefined && payload.phone !== null) ? payload.phone : existing.phone,
+    fax: (payload.fax !== undefined && payload.fax !== null) ? payload.fax : existing.fax,
+    email: (payload.email !== undefined && payload.email !== null) ? payload.email : existing.email,
+    website: (payload.website !== undefined && payload.website !== null) ? payload.website : existing.website,
+    payment_terms: (payload.payment_terms !== undefined && payload.payment_terms !== null) ? payload.payment_terms : existing.payment_terms,
+    taxing_scheme: (payload.taxing_scheme !== undefined && payload.taxing_scheme !== null) ? payload.taxing_scheme : existing.taxing_scheme,
+    carrier: (payload.carrier !== undefined && payload.carrier !== null) ? payload.carrier : existing.carrier,
+    currency: (payload.currency !== undefined && payload.currency !== null) ? payload.currency : existing.currency,
+    business_address: (payload.business_address !== undefined && payload.business_address !== null) ? payload.business_address : existing.business_address,
+    balance: Number((payload.balance !== undefined && payload.balance !== null) ? payload.balance : (existing.balance || 0)),
+    updated_at: now
+  };
+  run(
+    `UPDATE vendors
+     SET name = ?, contact = ?, phone = ?, fax = ?, email = ?, website = ?, payment_terms = ?, taxing_scheme = ?, carrier = ?, currency = ?, business_address = ?, balance = ?, updated_at = ?
+     WHERE id = ?`,
+    [v.name, v.contact, v.phone, v.fax, v.email, v.website, v.payment_terms, v.taxing_scheme, v.carrier, v.currency, v.business_address, v.balance, v.updated_at, id]
+  );
+  return getVendor(id);
 }

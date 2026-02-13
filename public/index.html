@@ -14,37 +14,41 @@
     <div class="top-tabs">
       <div class="top-tab active" data-top="home">Homepage</div>
       <div class="top-tab" data-top="dashboard">Dashboard</div>
+        <div class="top-tab" data-top="customer">Customer</div>
+      <div class="top-tab" data-top="vendor">Vendor</div>
+      <div class="top-tab" data-top="purchase">Purchase Order</div>
+      <div class="top-tab" data-top="inventory">Inventory</div>
+        <div class="top-tab" data-top="sales">Order Slip</div>
+    </div>
+    <div class="dyn-tabs" id="dynTabs">
+      <div id="addTabBtn" class="dyn-add">+</div>
     </div>
   </div>
   <div id="homePane">
     <div class="dashboard-layout">
       <div class="dashboard-main">
         <div class="flow">
-          <div class="flow-step">
+          <div class="flow-step" data-top="vendor">
             <div class="flow-icon">👥</div>
             <div class="flow-title">VENDOR</div>
           </div>
           <div class="connector"></div>
-          <div class="flow-step">
+          <div class="flow-step" data-top="purchase">
             <div class="flow-icon">🧾</div>
             <div class="flow-title">Purchase Order</div>
-            <div class="flow-links">
-              <div data-action="new-order" class="flow-link">New Order</div>
-              <div data-action="order-list" class="flow-link">Order List</div>
-            </div>
           </div>
           <div class="connector"></div>
-          <div class="flow-step">
+          <div class="flow-step" data-top="inventory">
             <div class="flow-icon">📦</div>
             <div class="flow-title">INVENTORY</div>
           </div>
           <div class="connector"></div>
-          <div class="flow-step">
+          <div class="flow-step" data-top="sales">
             <div class="flow-icon">🧾</div>
             <div class="flow-title">ORDER SLIP</div>
           </div>
           <div class="connector"></div>
-          <div class="flow-step">
+          <div class="flow-step" data-top="customer">
             <div class="flow-icon">🧑‍🤝‍🧑</div>
             <div class="flow-title">CUSTOMER</div>
           </div>
@@ -68,291 +72,744 @@
       </aside>
     </div>
   </div>
-  <main id="appPane" style="grid-template-columns: 300px 1fr;">
-    <aside>
-      <div class="aside-title">Search Filters</div>
-      <form id="searchForm">
-        <input name="q" placeholder="Item Name/Code" />
-        <input name="description" placeholder="Description" />
-        <input name="category" placeholder="Category" />
-        <button type="submit">Refresh</button>
-      </form>
-      <div class="separator"></div>
-      <div class="aside-title">Categories</div>
-      <div id="categoryList"></div>
-      <div class="separator"></div>
-      <div class="aside-title">Item List</div>
-      <div id="itemList"></div>
-    </aside>
+  <main id="appPane" style="grid-template-columns: 1fr;">
     <section>
-      <div class="tabs">
-        <div class="tab" data-tab="dashboard">Dashboard</div>
-        <div class="tab active" data-tab="product-info">Product Info</div>
-        <div class="tab" data-tab="extra-info">Extra Info</div>
-        <div class="tab" data-tab="product-vendors">Product Vendors</div>
-        <div class="tab" data-tab="movement-history">Movement History</div>
-        <div class="tab" data-tab="serial-numbers">Serial Numbers</div>
-        <div class="tab" data-tab="batches">Batches</div>
-        <div class="tab" data-tab="order-history">Order History</div>
-      </div>
       <div id="dashboard" class="tab-panel">
         <div class="dashboard-layout">
           <div class="dashboard-main">
-            <h2>Overview</h2>
-            <div class="dash-grid">
-              <div class="dash-card"><div class="metric-label">On Hand</div><div class="metric-value" id="dashOnHand">0</div></div>
-              <div class="dash-card"><div class="metric-label">Reserved</div><div class="metric-value" id="dashReserved">0</div></div>
-              <div class="dash-card"><div class="metric-label">On Order</div><div class="metric-value" id="dashOnOrder">0</div></div>
-              <div class="dash-card"><div class="metric-label">Available</div><div class="metric-value" id="dashAvailable">0</div></div>
-            </div>
-            <div class="flow">
-              <div class="flow-step">
-                <div class="flow-icon">👥</div>
-                <div class="flow-title">VENDOR</div>
+            <div class="dash-controls">
+              <div>Lines
+                <select id="dashLines">
+                  <option>Sales Completed</option>
+                  <option>Cost of Goods Sold</option>
+                  <option>Sales Profit</option>
+                  <option>Vendor Payments Due</option>
+                  <option>Customer Payments Due</option>
+                </select>
               </div>
-              <div class="connector"></div>
-              <div class="flow-step">
-                <div class="flow-icon">🧾</div>
-                <div class="flow-title">Purchase Order</div>
-                <div class="flow-links">
-                  <div data-action="new-order" class="flow-link">New Order</div>
-                  <div data-action="order-list" class="flow-link">Order List</div>
+              <div>Date
+                <select id="dashDateRange">
+                  <option>Last 30 Days</option>
+                  <option selected>Last 90 Days</option>
+                  <option>Year to Date</option>
+                </select>
+              </div>
+              <div>Group By
+                <select id="dashGroupBy">
+                  <option selected>Months</option>
+                  <option>Weeks</option>
+                </select>
+              </div>
+            </div>
+            <section>
+              <h2>TIMELINE</h2>
+              <div class="timeline-wrap">
+                <canvas id="timelineCanvas" width="800" height="220"></canvas>
+                <div class="dash-legend" id="dashLegend">
+                  <span class="legend-item legend-green">Sales Completed, Total: Php0.00</span>
+                  <span class="legend-item legend-yellow">Cost of Goods Sold, Total: Php0.00</span>
+                  <span class="legend-item legend-blue">Sales Profit, Total: Php0.00</span>
+                  <span class="legend-item legend-orange">Vendor Payments Due, Total: Php0.00</span>
+                  <span class="legend-item legend-lime">Customer Payments Due, Total: Php0.00</span>
+                </div>
+                <div class="vertical-tools">
+                  <div class="tool" title="Search">🔍</div>
+                  <div class="tool" title="Zoom In">➕</div>
+                  <div class="tool" title="Zoom Out">➖</div>
+                  <div class="tool" title="Expand">⤢</div>
                 </div>
               </div>
-              <div class="connector"></div>
-              <div class="flow-step">
-                <div class="flow-icon">📦</div>
-                <div class="flow-title">INVENTORY</div>
-              </div>
-              <div class="connector"></div>
-              <div class="flow-step">
-                <div class="flow-icon">🧾</div>
-                <div class="flow-title">ORDER SLIP</div>
-              </div>
-              <div class="connector"></div>
-              <div class="flow-step">
-                <div class="flow-icon">🧑‍🤝‍🧑</div>
-                <div class="flow-title">CUSTOMER</div>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;margin-top:12px;">
-              <section>
-                <h2>Top Categories</h2>
-                <div id="dashTopCategories"></div>
-              </section>
-              <section>
-                <h2>Low Stock</h2>
-                <div id="dashLowStock"></div>
-              </section>
-            </div>
+            </section>
             <section style="margin-top:12px;">
-              <h2>Recent Movements</h2>
-              <div id="dashMovements"></div>
+              <h2>OUTSTANDING <a href="#" class="details-link">details</a></h2>
+              <div id="outstandingTiles" class="tile-grid"></div>
             </section>
           </div>
           <aside class="dashboard-side">
-            <div class="aside-title">Shortcuts</div>
-            <div class="shortcut-list">
-              <div class="shortcut" data-tab-target="dashboard">Dashboard</div>
-              <div class="shortcut" data-tab-target="movement-history">Reports</div>
-              <div class="shortcut" data-tab-target="extra-info">Settings</div>
-              <div class="shortcut" data-action="import">Import</div>
-              <div class="shortcut" data-action="export">Export</div>
+            <div class="aside-title">TOP 5 SALES ORDERS <span class="aside-sub">w/</span>
+              <select id="topSalesOrderMetric" class="aside-select">
+                <option selected>highest sales</option>
+                <option>most orders</option>
+              </select>
             </div>
-            <div class="separator"></div>
-            <div class="aside-title">Inspiration</div>
-            <div class="inspiration">
-              <div>"The world is changing very fast. Big will not beat small anymore. It will be the fast beating the slow."</div>
-              <div style="margin-top:6px;">— Rupert Murdoch</div>
-            </div>
+            <div id="topSalesOrders" class="orders-list"></div>
           </aside>
         </div>
       </div>
-      <div id="product-info" class="tab-panel active">
-        <h2>Products</h2>
-        <div id="products"></div>
-        <div class="metrics">
-          <div class="metric"><div class="metric-label">On Hand</div><div class="metric-value" id="qtyOnHand">0</div></div>
-          <div class="metric"><div class="metric-label">Reserved</div><div class="metric-value" id="qtyReserved">0</div></div>
-          <div class="metric"><div class="metric-label">On Order</div><div class="metric-value" id="qtyOnOrder">0</div></div>
-          <div class="metric"><div class="metric-label">Available</div><div class="metric-value" id="qtyAvailable">0</div></div>
+  </main>
+  <main id="inventoryPane" style="display:none; grid-template-columns: 340px 1fr; padding: 16px; gap: 16px;">
+    <aside class="inv-left">
+      <div id="invLeftProduct">
+        <div class="aside-title">Search</div>
+        <label>Item Name/Code <input id="invSearchNameCode" /></label>
+        <label>Description <input id="invSearchDescription" /></label>
+        <label>Category
+          <select id="invSearchCategory"></select>
+        </label>
+        <button id="invRefreshBtn">Refresh</button>
+        <div class="separator"></div>
+        <div class="aside-title">Category / Item</div>
+        <div class="inv-left-controls">
+          <label>Sort
+            <select id="invProdSort">
+              <option value="name_asc" selected>Name ↑</option>
+              <option value="name_desc">Name ↓</option>
+              <option value="category_asc">Category ↑</option>
+              <option value="category_desc">Category ↓</option>
+            </select>
+          </label>
+          <label>Page Size
+            <select id="invProdPageSize">
+              <option>10</option><option selected>25</option><option>50</option>
+            </select>
+          </label>
+          <div class="pager">
+            <button id="invProdPrev">Prev</button>
+            <span id="invProdPageInfo">1 / 1</span>
+            <button id="invProdNext">Next</button>
+          </div>
         </div>
-        <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-top:16px;">
-          <div>
-            <h2>Add Product</h2>
-            <form id="addProductForm">
-              <input name="sku" placeholder="SKU" required />
-              <input name="name" placeholder="Name" required />
-              <select name="item_type">
-                <option value="Stock">Stock</option>
-                <option value="Non-Stock">Non-Stock</option>
-                <option value="Service">Service</option>
+        <div id="invSideList" class="inv-side-list"></div>
+      </div>
+      <div id="invLeftExtra" style="display:none;">
+        <div class="aside-title">Extra Info</div>
+        <div class="inv-left-controls">
+          <label>Page Size
+            <select id="invExtraPageSize">
+              <option>10</option><option selected>25</option><option>50</option>
+            </select>
+          </label>
+          <div class="pager">
+            <button id="invExtraPrev">Prev</button>
+            <span id="invExtraPageInfo">1 / 1</span>
+            <button id="invExtraNext">Next</button>
+          </div>
+        </div>
+        <div id="invExtraList" class="inv-side-list"></div>
+      </div>
+      <div id="invLeftVendors" style="display:none;">
+        <div class="aside-title">Vendors</div>
+        <div class="inv-left-controls">
+          <label>Sort
+            <select id="invVendorSort">
+              <option value="name_asc" selected>Vendor ↑</option>
+              <option value="name_desc">Vendor ↓</option>
+              <option value="price_asc">Price ↑</option>
+              <option value="price_desc">Price ↓</option>
+            </select>
+          </label>
+          <label>Page Size
+            <select id="invVendorPageSize">
+              <option>10</option><option selected>25</option><option>50</option>
+            </select>
+          </label>
+          <div class="pager">
+            <button id="invVendorPrev">Prev</button>
+            <span id="invVendorPageInfo">1 / 1</span>
+            <button id="invVendorNext">Next</button>
+          </div>
+        </div>
+        <button id="invLeftVendorRefreshBtn">Refresh</button>
+        <div id="invLeftVendorList" class="inv-side-list"></div>
+      </div>
+      <div id="invLeftMovement" style="display:none;">
+        <div class="aside-title">Movements</div>
+        <div class="inv-left-controls">
+          <label>Sort
+            <select id="invMovementSort">
+              <option value="date_desc" selected>Date ↓</option>
+              <option value="date_asc">Date ↑</option>
+              <option value="delta_desc">Delta ↓</option>
+              <option value="delta_asc">Delta ↑</option>
+            </select>
+          </label>
+          <label>Page Size
+            <select id="invMovementPageSize">
+              <option>10</option><option selected>25</option><option>50</option>
+            </select>
+          </label>
+          <div class="pager">
+            <button id="invMovementPrev">Prev</button>
+            <span id="invMovementPageInfo">1 / 1</span>
+            <button id="invMovementNext">Next</button>
+          </div>
+        </div>
+        <button id="invLeftMovementRefreshBtn">Refresh</button>
+        <div id="invLeftMovementList" class="inv-side-list"></div>
+      </div>
+      <div id="invLeftOrders" style="display:none;">
+        <div class="aside-title">Orders</div>
+        <div class="inv-left-controls">
+          <label>Sort
+            <select id="invOrderSort">
+              <option value="date_desc" selected>Date ↓</option>
+              <option value="date_asc">Date ↑</option>
+              <option value="total_desc">Total ↓</option>
+              <option value="total_asc">Total ↑</option>
+            </select>
+          </label>
+          <label>Page Size
+            <select id="invOrderPageSize">
+              <option>10</option><option selected>25</option><option>50</option>
+            </select>
+          </label>
+          <div class="pager">
+            <button id="invOrderPrev">Prev</button>
+            <span id="invOrderPageInfo">1 / 1</span>
+            <button id="invOrderNext">Next</button>
+          </div>
+        </div>
+        <button id="invLeftOrderRefreshBtn">Refresh</button>
+        <div id="invLeftOrderList" class="inv-side-list"></div>
+      </div>
+      <!-- Reference Photos removed -->
+    </aside>
+    <section class="inv-main">
+      <div class="inv-toolbar">
+        <button id="invNewBtn">New</button>
+        <button id="invSaveBtn">Save</button>
+        <button>Copy</button>
+        <button>Version</button>
+        <button>Deactivate</button>
+        <button>Attachment</button>
+        <button class="close-btn">Close</button>
+      </div>
+      <div class="inv-form">
+        <div class="form-section">
+          <div class="section-title">Basic</div>
+          <label>Item Name/Code <input id="prodNameCode" /></label>
+          <label>Category
+            <input id="prodCategory" />
+          </label>
+          <label>Type
+            <select id="prodType">
+              <option>Stock</option>
+              <option>Non-Stock</option>
+            </select>
+          </label>
+          <label>Description <textarea id="prodDescription" rows="3"></textarea></label>
+        </div>
+        <div class="form-section">
+          <div class="section-title">Picture</div>
+          <div class="picture-box"></div>
+          <div class="picture-actions">
+            <button>Browse</button>
+            <button>Clear</button>
+          </div>
+        </div>
+        <div class="form-section">
+          <div class="section-title">Sales Info</div>
+          <label>Tax Code
+            <select id="prodTaxCode">
+              <option>Taxable</option>
+              <option>Non-Taxable</option>
+            </select>
+          </label>
+          <label>Cash <input id="prodCash" value="Php0.00" /></label>
+          <label>Account <input id="prodAccount" /></label>
+          <label>Check <input id="prodCheck" /></label>
+        </div>
+        <div class="form-section">
+          <div class="section-title">Costing Info</div>
+          <label>Costing Method
+            <select id="prodCostingMethod">
+              <option>Moving Average</option>
+              <option>FIFO</option>
+              <option>LIFO</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-section">
+          <div class="section-title">Inventory</div>
+          <div id="stockLevels"></div>
+        </div>
+      </div>
+      <div class="inv-tabs">
+        <div class="inv-tab active">Product Info</div>
+        <div class="inv-tab">Extra Info</div>
+        <div class="inv-tab">Product Vendors</div>
+        <div class="inv-tab">Movement History</div>
+        <div class="inv-tab">Order History</div>
+      </div>
+      <div class="inv-panels">
+        <div class="inv-panel active">
+          <div id="products"></div>
+        </div>
+        <div class="inv-panel">
+          <div class="extra-info">
+            <div class="form-section">
+              <div class="section-title">Storage Info</div>
+              <label>Barcode <input id="prodBarcode" /></label>
+              <label>Reorder Point <input id="prodReorderPoint" type="number" /></label>
+              <label>Reorder Quantity <input id="prodReorderQty" type="number" /></label>
+              <label>Default Location <input id="prodDefaultLocation" /></label>
+              <label>Default Sublocation <input id="prodDefaultSublocation" /></label>
+              <label>Last Vendor <input id="prodLastVendor" /></label>
+            </div>
+            <div class="form-section">
+              <div class="section-title">Unit of Measure</div>
+              <label>Standard UoM <input id="prodStandardUom" /></label>
+              <label>Sales UoM <input id="prodSalesUom" /></label>
+              <label>Purchasing UoM <input id="prodPurchasingUom" /></label>
+            </div>
+            <div class="form-section">
+              <div class="section-title">Bill of Materials</div>
+              <div id="bomTable"></div>
+            </div>
+            <div class="form-section">
+              <div class="section-title">Measurements</div>
+              <label>Length <input id="prodLength" type="number" /></label>
+              <label>Width <input id="prodWidth" type="number" /></label>
+              <label>Height <input id="prodHeight" type="number" /></label>
+              <label>Weight <input id="prodWeight" type="number" /></label>
+            </div>
+            <div class="form-section">
+              <div class="section-title">Remarks</div>
+              <textarea id="prodRemarks" rows="4"></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="inv-panel">
+          <div id="vendorList"></div>
+        </div>
+        <div class="inv-panel">
+          <div id="movements"></div>
+        </div>
+        <div class="inv-panel">
+          <div id="orderHistory"></div>
+        </div>
+      </div>
+      <div class="inv-summary">
+        <div>Quantity on Hand <span id="qtyOnHand">0</span></div>
+        <div>Quantity Reserved <span id="qtyReserved">0</span></div>
+        <div>Quantity on Order <span id="qtyOnOrder">0</span></div>
+        <div>Quantity Available <span id="qtyAvailable">0</span></div>
+      </div>
+    </section>
+  </main>
+  <main id="customerPane" style="display:none; grid-template-columns: 340px 1fr; padding: 16px; gap: 16px;">
+    <aside class="po-left">
+      <div class="aside-title">Search</div>
+      <label>Name <input id="custSearchName" /></label>
+      <button id="custRefreshBtn">Refresh</button>
+      <div class="separator"></div>
+      <div class="aside-title">Name</div>
+      <div id="custList" class="po-order-list"></div>
+    </aside>
+    <section class="po-main">
+      <div class="po-toolbar">
+        <button id="custNewBtn">New</button>
+        <button id="custSaveBtn">Save</button>
+        <button>Copy</button>
+        <button>Version</button>
+        <button>Deactivate</button>
+        <button>Attachment</button>
+        <button class="close-btn">Close</button>
+      </div>
+      <div class="po-header">
+        <div class="po-left-fields">
+          <div class="form-section">
+            <div class="section-title">Basic</div>
+            <label>Name <input id="custName" /></label>
+            <label>Balance <input id="custBalance" value="Php0.00" /></label>
+          </div>
+          <div class="form-section">
+            <div class="section-title">Addresses</div>
+            <label>Business Address <textarea id="custBusinessAddress" rows="4"></textarea></label>
+          </div>
+        </div>
+        <div class="po-mid-fields">
+          <div class="form-section">
+            <div class="section-title">Contact</div>
+            <label>Name <input id="custContact" /></label>
+            <label>Phone <input id="custPhone" /></label>
+            <label>Fax <input id="custFax" /></label>
+            <label>Email <input id="custEmail" /></label>
+            <label>Website <input id="custWebsite" /></label>
+          </div>
+        </div>
+        <div class="po-right-info">
+          <div class="form-section">
+            <div class="section-title">Purchasing Info</div>
+            <label>Pricing / Currency
+              <select id="custCurrency">
+                <option selected>Philippine Peso (Php)</option>
+                <option>USD</option>
               </select>
-              <label style="display:flex;align-items:center;gap:6px;">
-                <input name="active" type="checkbox" checked /> Active
-              </label>
-              <label style="display:flex;align-items:center;gap:6px;">
-                <select name="tracking_method">
-                  <option value="none">No Tracking</option>
-                  <option value="serial">Serial</option>
-                  <option value="batch">Batch</option>
-                </select>
-              </label>
-              <input name="categories" placeholder="Categories (comma-separated)" />
-              <input name="barcode" placeholder="Barcode" />
-              <input name="internal_code" placeholder="Internal Code" />
-              <input name="unit_cost" placeholder="Unit Cost" type="number" step="0.01" />
-              <input name="unit_price" placeholder="Unit Price" type="number" step="0.01" />
-              <input name="msrp" placeholder="MSRP" type="number" step="0.01" />
-              <input name="reorder_level" placeholder="Reorder Level" type="number" />
-              <input name="image_url" placeholder="Image URL" />
-              <textarea name="description" placeholder="Description" style="grid-column:span 2;height:80px;"></textarea>
-              <textarea name="notes" placeholder="Notes" style="grid-column:span 2;height:60px;"></textarea>
-              <button type="submit">Add</button>
-            </form>
-            <h2 style="margin-top:16px;">Inventory by Location</h2>
-            <div id="stockLevels"></div>
-          </div>
-          <div>
-            <h2>Picture</h2>
-            <img id="productImage" src="" alt="" style="width:100%;height:200px;object-fit:contain;border:1px solid #e5e7eb;border-radius:8px;" />
+            </label>
+            <label>Discount <input id="custDiscount" type="number" /></label>
+            <label>Payment Terms <input id="custPaymentTerms" /></label>
+            <label>Taxing Scheme
+              <select id="custTaxingScheme">
+                <option>No Tax</option>
+                <option>Taxable</option>
+              </select>
+            </label>
+            <label>Tax Exempt # <input id="custTaxExemptNo" /></label>
           </div>
         </div>
       </div>
-      <div id="extra-info" class="tab-panel">
-        <h2>Storage Info</h2>
-        <form id="storageInfoForm">
-          <input name="product_id" placeholder="Product ID" type="number" required />
-          <input name="default_location" placeholder="Default Location" />
-          <input name="default_sublocation" placeholder="Default Sublocation" />
-          <input name="reorder_point" placeholder="Reorder Point" type="number" />
-          <input name="reorder_quantity" placeholder="Reorder Quantity" type="number" />
-          <input name="last_vendor" placeholder="Last Vendor" />
-          <h2>Unit of Measure</h2>
-          <input name="standard_uom" placeholder="Standard UoM" />
-          <input name="sales_uom" placeholder="Sales UoM" />
-          <input name="purchasing_uom" placeholder="Purchasing UoM" />
-          <h2>Measurements</h2>
-          <input name="length" placeholder="Length" type="number" step="0.01" />
-          <input name="width" placeholder="Width" type="number" step="0.01" />
-          <input name="height" placeholder="Height" type="number" step="0.01" />
-          <input name="weight" placeholder="Weight" type="number" step="0.01" />
-          <h2>Sales & Costing</h2>
-          <input name="tax_code" placeholder="Tax Code" />
-          <input name="costing_method" placeholder="Costing Method" />
-          <button type="submit">Save Extra Info</button>
-        </form>
-        <h2>Bill of Materials</h2>
-        <form id="addBomForm">
-          <input name="product_id" placeholder="Product ID" type="number" required />
-          <input name="component_item" placeholder="Component Item" />
-          <input name="description" placeholder="Description" />
-          <input name="qty" placeholder="Qty" type="number" step="0.01" />
-          <input name="cost" placeholder="Cost" type="number" step="0.01" />
-          <button type="submit">Add BOM Item</button>
-        </form>
-        <div id="bomList"></div>
+      <div class="form-section">
+        <div class="section-title">Remarks</div>
+        <textarea id="custRemarks" rows="4"></textarea>
       </div>
-      <div id="product-vendors" class="tab-panel">
-        <h2>Product Vendors</h2>
-        <form id="addVendorForm">
-          <input name="product_id" placeholder="Product ID" type="number" required />
-          <input name="vendor_name" placeholder="Vendor" required />
-          <input name="vendor_price" placeholder="Vendor's Price" type="number" step="0.01" />
-          <input name="vendor_product_code" placeholder="Vendor Product Code" />
-          <button type="submit">Add Vendor</button>
-        </form>
-        <div id="vendorList"></div>
+      <div class="form-section">
+        <div class="section-title">Financials</div>
+        <div style="display:grid;grid-template-columns:150px 1fr;gap:6px;align-items:center;">
+          <div>Total Sales</div><div><span id="custTotalSales">Php0.00</span></div>
+          <div>Paid</div><div><span id="custPaidSum">Php0.00</span></div>
+          <div>Balance</div><div><span id="custBalanceSum">Php0.00</span></div>
+        </div>
+        <div style="margin-top:10px;">
+          <div style="font-weight:600;margin-bottom:6px;">Payments</div>
+          <table>
+            <thead>
+              <tr><th>Date</th><th>Status</th><th>Amount</th></tr>
+            </thead>
+            <tbody id="custPaymentsBody"></tbody>
+          </table>
+          <div style="margin-top:10px;display:grid;grid-template-columns:150px 1fr;gap:6px;align-items:center;">
+            <div>Add Payments</div>
+            <div style="display:grid;grid-template-columns:1fr 160px 120px;gap:6px;">
+              <input id="custPaymentAmount" placeholder="Amount (Php)" />
+              <select id="custPaymentStatus">
+                <option selected>paid</option>
+                <option>due</option>
+              </select>
+              <button id="custAddPaymentLineBtn">Add Line</button>
+            </div>
+          </div>
+          <table style="margin-top:8px;">
+            <thead>
+              <tr><th>Status</th><th>Amount</th></tr>
+            </thead>
+            <tbody id="custNewPaymentsBody"></tbody>
+          </table>
+          <div style="margin-top:8px;">
+            <button id="custSavePaymentsBtn">Save Payments</button>
+          </div>
+        </div>
       </div>
-      <div id="movement-history" class="tab-panel">
-        <h2>Adjust Stock</h2>
-        <form id="adjustStockForm">
-          <input name="product_id" placeholder="Product ID" type="number" required />
-          <input name="delta" placeholder="Change Qty (+/-)" type="number" required />
-          <input name="location" placeholder="Location" value="Main" />
-          <input name="sublocation" placeholder="Sublocation" />
-          <input name="reason" placeholder="Reason" />
-          <input name="remarks" placeholder="Remarks" />
-          <input name="reference" placeholder="Reference" />
-          <input name="serials" placeholder="Serials (comma-separated)" />
-          <input name="batch_code" placeholder="Batch Code" />
-          <input name="batch_date" placeholder="Batch Date (YYYY-MM-DD)" />
-          <input name="expiration_date" placeholder="Expiration Date (YYYY-MM-DD)" />
-          <button type="submit">Apply</button>
-        </form>
-        <h2>Recent Movements</h2>
-        <div id="movements"></div>
+      <div class="po-tabs">
+        <div class="po-tab active">Customer Info</div>
+        <div class="po-tab">Extra Info</div>
+        <div class="po-tab">Order History</div>
       </div>
-      <div id="serial-numbers" class="tab-panel">
-        <h2>Add Serial Number</h2>
-        <form id="addSerialForm">
-          <input name="product_id" placeholder="Product ID" type="number" required />
-          <input name="serial" placeholder="Serial Number" required />
-          <input name="location" placeholder="Location" value="Main" />
-          <input name="sublocation" placeholder="Sublocation" />
-          <select name="status">
-            <option value="in_stock">In Stock</option>
-            <option value="removed">Removed</option>
-          </select>
-          <button type="submit">Add Serial</button>
-        </form>
-        <h2>Serial Numbers</h2>
-        <div id="serialList"></div>
+      <div class="inv-panels">
+        <div class="inv-panel active" id="custInfoPanel"></div>
+        <div class="inv-panel" id="custExtraPanel"></div>
+        <div class="inv-panel" id="custOrdersPanel">
+          <table>
+            <thead>
+              <tr>
+                <th>Order #</th><th>Date</th><th>Status</th><th>Total</th>
+              </tr>
+            </thead>
+            <tbody id="custOrdersBody"></tbody>
+          </table>
+        </div>
       </div>
-      <div id="batches" class="tab-panel">
-        <h2>Add Batch</h2>
-        <form id="addBatchForm">
-          <input name="product_id" placeholder="Product ID" type="number" required />
-          <input name="batch_code" placeholder="Batch Code" />
-          <input name="batch_date" placeholder="Batch Date (YYYY-MM-DD)" required />
-          <input name="expiration_date" placeholder="Expiration Date (YYYY-MM-DD)" />
-          <input name="location" placeholder="Location" value="Main" />
-          <input name="sublocation" placeholder="Sublocation" />
-          <select name="status">
-            <option value="in_stock">In Stock</option>
-            <option value="removed">Removed</option>
-          </select>
-          <button type="submit">Add Batch</button>
-        </form>
-        <h2>Batches</h2>
-        <div id="batchList"></div>
+    </section>
+  </main>
+  <main id="salesPane" style="display:none; grid-template-columns: 340px 1fr; padding: 16px; gap: 16px;">
+    <aside class="po-left">
+      <div class="aside-title">Search</div>
+      <label>Order # <input id="soSearchOrder" /></label>
+      <label>Status
+        <select id="soSearchStatus">
+          <option selected>Open</option>
+          <option>In Progress</option>
+          <option>Completed</option>
+        </select>
+      </label>
+      <label>Customer <input id="soSearchCustomer" /></label>
+      <button id="soRefreshBtn">Refresh</button>
+      <div class="separator"></div>
+      <div class="aside-title">Order #</div>
+      <div id="soOrderList" class="po-order-list"></div>
+    </aside>
+    <section class="po-main">
+      <div class="po-toolbar">
+        <button id="soNewBtn">New</button>
+        <button id="soSaveBtn">Save</button>
+        <button>Print</button>
+        <button>Copy</button>
+        <button>Version</button>
+        <button>Attachment</button>
+        <button class="close-btn">Close</button>
       </div>
-      <div id="order-history" class="tab-panel">
-        <h2>Order History</h2>
-        <div>Coming soon</div>
+      <div class="po-header">
+        <div class="po-left-fields">
+          <label>Sales Rep <input id="soSalesRep" /></label>
+          <label>Location
+            <select id="soLocation">
+              <option>DR</option>
+              <option>JO</option>
+              <option>WARNA...</option>
+            </select>
+          </label>
+        </div>
+        <div class="po-mid-fields">
+          <div>Order # <span id="soNumber"></span></div>
+          <div>Date <input id="soDate" type="date" /></div>
+          <div>Status
+            <select id="soStatus">
+              <option selected>Open</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+            </select>
+          </div>
+        </div>
+        <div class="po-right-info">
+          <label>Customer <input id="soCustomer" /></label>
+          <label>Contact <input id="soContact" /></label>
+          <label>Phone <input id="soPhone" /></label>
+          <label>Address <textarea id="soAddress" rows="3"></textarea></label>
+        </div>
       </div>
-      <section>
-      <h2>Add Product</h2>
-      <form id="addProductForm">
-        <input name="sku" placeholder="SKU" required />
-        <input name="name" placeholder="Name" required />
-        <input name="categories" placeholder="Categories (comma-separated)" />
-        <input name="barcode" placeholder="Barcode" />
-        <input name="internal_code" placeholder="Internal Code" />
-        <input name="unit_cost" placeholder="Unit Cost" type="number" step="0.01" />
-        <input name="unit_price" placeholder="Unit Price" type="number" step="0.01" />
-        <input name="msrp" placeholder="MSRP" type="number" step="0.01" />
-        <input name="length" placeholder="Length" type="number" step="0.01" />
-        <input name="width" placeholder="Width" type="number" step="0.01" />
-        <input name="height" placeholder="Height" type="number" step="0.01" />
-        <input name="weight" placeholder="Weight" type="number" step="0.01" />
-        <input name="vendor_name" placeholder="Vendor Name" />
-        <input name="vendor_sku" placeholder="Vendor SKU" />
-        <input name="vendor_lead_time_days" placeholder="Lead Time (days)" type="number" />
-        <input name="vendor_moq" placeholder="Minimum Order Qty" type="number" />
-        <input name="image_url" placeholder="Image URL" />
-        <input name="reorder_level" placeholder="Reorder Level" type="number" />
-        <button type="submit">Add</button>
-      </form>
-      <h2>Add Variant</h2>
-      <form id="addVariantForm">
-        <input name="product_id" placeholder="Product ID" type="number" required />
-        <input name="sku" placeholder="Variant SKU" />
-        <input name="barcode" placeholder="Variant Barcode" />
-        <input name="attributes" placeholder="Attributes JSON (e.g. {\"color\":\"Red\",\"size\":\"M\"})" />
-        <input name="unit_price" placeholder="Variant Price" type="number" step="0.01" />
-        <button type="submit">Add Variant</button>
-      </form>
+      <div class="po-items">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 18%;">Item</th>
+              <th>Description</th>
+              <th style="width: 12%;">Quantity</th>
+              <th style="width: 12%;">Unit Price</th>
+              <th style="width: 12%;">Discount</th>
+              <th style="width: 12%;">Sub-Total</th>
+            </tr>
+          </thead>
+          <tbody id="soItemsBody"></tbody>
+        </table>
+        <div class="po-item-add">
+          <label>Item <input id="soItemName" /></label>
+          <label>Description <input id="soItemDesc" /></label>
+          <label>Quantity <input id="soItemQty" type="number" /></label>
+          <label>Unit Price <input id="soItemPrice" type="number" /></label>
+          <label>Discount <input id="soItemDiscount" type="number" /></label>
+          <button id="soAddItemBtn">Add</button>
+        </div>
+      </div>
+      <div class="po-footer">
+        <div class="po-left-summary">
+          <label>Taxing Scheme
+            <select id="soTaxScheme">
+              <option>No Tax</option>
+              <option>Taxable</option>
+            </select>
+          </label>
+          <label>Pricing / Currency
+            <select id="soCurrency">
+              <option selected>CASH</option>
+              <option>ACCOUNT</option>
+              <option>CHECK</option>
+            </select>
+          </label>
+          <label>Remarks <textarea id="soRemarks" rows="4"></textarea></label>
+        </div>
+        <div class="po-right-summary">
+          <div>Sub-Total <span id="soSubTotal">Php0.00</span></div>
+          <div>Total <span id="soTotal">Php0.00</span></div>
+          <div>Paid <input id="soPaid" value="Php0.00" /></div>
+          <div>Balance <span id="soBalance">Php0.00</span></div>
+        </div>
+      </div>
+      <div class="po-bottom-tabs">
+        <div class="po-tab active">Sales</div>
+        <div class="po-tab">Advanced</div>
+      </div>
+    </section>
+  </main>
+  <main id="vendorPane" style="display:none; grid-template-columns: 320px 1fr; padding: 16px; gap: 16px;">
+    <aside class="vendor-left">
+      <div class="vendor-search">
+        <div class="aside-title">Search</div>
+        <label>Name <input id="vendorSearchName" /></label>
+        <label>Contact <input id="vendorSearchContact" /></label>
+        <label>Phone <input id="vendorSearchPhone" /></label>
+        <button id="vendorRefreshBtn">Refresh</button>
+      </div>
+      <div class="separator"></div>
+      <div class="aside-title">Name</div>
+      <div id="vendorNames" class="vendor-list"></div>
+    </aside>
+    <section class="vendor-main">
+      <div class="vendor-toolbar">
+        <button id="vendorNewBtn">New</button>
+        <button id="vendorSaveBtn">Save</button>
+        <button>Copy</button>
+        <button>Version</button>
+        <button>Deactivate</button>
+        <button>Attachment</button>
+        <button id="vendorUseInPOBtn">Use in PO</button>
+        <button class="close-btn">Close</button>
+      </div>
+      <div class="vendor-form">
+        <div class="form-section">
+          <div class="section-title">Basic</div>
+          <label>Name <input id="vendorBasicName" /></label>
+          <label>Balance <input id="vendorBasicBalance" value="Php0.00" /></label>
+        </div>
+        <div class="form-section">
+          <div class="section-title">Addresses</div>
+          <label>Business Address
+            <textarea id="vendorBusinessAddress" rows="4"></textarea>
+          </label>
+        </div>
+        <div class="form-section">
+          <div class="section-title">Contact</div>
+          <label>Name <input id="vendorContactName" /></label>
+          <label>Phone <input id="vendorContactPhone" /></label>
+          <label>Fax <input id="vendorContactFax" /></label>
+          <label>Email <input id="vendorContactEmail" /></label>
+          <label>Website <input id="vendorContactWebsite" /></label>
+        </div>
+        <div class="form-section">
+          <div class="section-title">Purchasing Info</div>
+          <label>Payment Terms <input id="vendorPayTerms" /></label>
+          <label>Taxing Scheme <input id="vendorTaxScheme" /></label>
+          <label>Carrier <input id="vendorCarrier" /></label>
+          <label>Currency
+            <select id="vendorCurrency">
+              <option selected>Philippine Peso (Php)</option>
+            </select>
+          </label>
+        </div>
+        <div class="form-section">
+          <div class="section-title">Remarks</div>
+          <textarea id="vendorRemarks" rows="4"></textarea>
+        </div>
+      </div>
+      <div class="vendor-tabs">
+        <div class="vendor-tab active">Vendor Info</div>
+        <div class="vendor-tab">Vendor Products</div>
+        <div class="vendor-tab">Order History</div>
+      </div>
+    </section>
+  </main>
+  <main id="poPane" style="display:none; grid-template-columns: 340px 1fr; padding: 16px; gap: 16px;">
+    <aside class="po-left">
+      <div class="aside-title">Search</div>
+      <label>Order # <input id="poSearchOrder" /></label>
+      <label>Status
+        <select id="poSearchStatus">
+          <option selected>Open</option>
+          <option>In Progress</option>
+          <option>Completed</option>
+        </select>
+      </label>
+      <label>Vendor <input id="poSearchVendor" /></label>
+      <button id="poRefreshBtn">Refresh</button>
+      <div class="separator"></div>
+      <div class="aside-title">Order #</div>
+      <div id="poOrderList" class="po-order-list"></div>
+    </aside>
+    <section class="po-main">
+      <div class="po-toolbar">
+        <button id="poNewBtn">New</button>
+        <button id="poSaveBtn">Save</button>
+        <button>Print</button>
+        <button>Copy</button>
+        <button>Version</button>
+        <button>Attachment</button>
+        <button class="close-btn">Close</button>
+      </div>
+      <div class="po-header">
+        <div class="po-left-fields">
+          <label>Vendor <input id="poVendor" /></label>
+          <label>Contact <input id="poContact" /></label>
+          <label>Phone <input id="poPhone" /></label>
+          <label>Vendor Address <textarea id="poVendorAddress" rows="3"></textarea></label>
+        </div>
+        <div class="po-mid-fields">
+          <label>Terms <input id="poTerms" /></label>
+          <label>V. Order # <input id="poVendorOrder" /></label>
+          <label>Location
+            <select id="poLocation">
+              <option>SUPPL...</option>
+              <option>FORWA...</option>
+            </select>
+          </label>
+          <label>WB# <input id="poWB" /></label>
+        </div>
+        <div class="po-right-info">
+          <div>Order # <span id="poNumber"></span></div>
+          <div>Date <input id="poDate" type="date" /></div>
+          <div>Status
+            <select id="poStatus">
+              <option selected>Open</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+            </select>
+          </div>
+          <div>Ship-To Address
+            <textarea id="poShipTo" rows="4">SPUDS Enterprises
+157-B Don Alfaro Street, Tetuan
+Zamboanga City, ZDS
+Philippines
+7000</textarea>
+          </div>
+        </div>
+      </div>
+      <div class="po-items">
+        <table>
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Description</th>
+              <th>Vendor Product Code</th>
+              <th>Quantity</th>
+              <th>Unit Price</th>
+              <th>Discount</th>
+              <th>Sub-Total</th>
+            </tr>
+          </thead>
+          <tbody id="poItemsBody"></tbody>
+        </table>
+        <div class="po-item-entry">
+          <input id="poItemName" placeholder="Item" />
+          <input id="poItemDesc" placeholder="Description" />
+          <input id="poItemCode" placeholder="Vendor Product Code" />
+          <input id="poItemQty" type="number" placeholder="Qty" />
+          <input id="poItemPrice" type="number" placeholder="Unit Price" />
+          <input id="poItemDiscount" type="number" placeholder="Discount" />
+          <button id="poAddItemBtn">Add Item</button>
+        </div>
+      </div>
+      <div class="po-bottom">
+        <div class="po-bottom-left">
+          <label>Due Date <input id="poDueDate" type="date" /></label>
+          <label>Taxing Scheme
+            <select id="poTaxScheme">
+              <option>No Tax</option>
+            </select>
+          </label>
+          <label>Non-Vendor Costs
+            <select id="poNonVendorCosts">
+              <option>None</option>
+            </select>
+          </label>
+          <label>Currency
+            <select id="poCurrency">
+              <option>Philippine Peso (Php)</option>
+            </select>
+          </label>
+          <label>Req. Ship Date <input id="poReqShipDate" type="date" /></label>
+          <label>Remarks <textarea id="poRemarks" rows="4"></textarea></label>
+        </div>
+        <div class="po-bottom-right">
+          <div>Sub-Total <span id="poSubTotal">Php0.00</span></div>
+          <div>Freight <input id="poFreight" type="number" value="0" /></div>
+          <div>Total <span id="poTotal">Php0.00</span></div>
+          <div>Paid <input id="poPaid" type="number" value="0" /></div>
+          <div>Balance <span id="poBalance">Php0.00</span></div>
+          <button id="poReceivePayBtn">Receive & Pay</button>
+        </div>
+      </div>
+      <div class="po-tabs">
+        <div class="po-tab active">Purchasing</div>
+        <div class="po-tab">Advanced</div>
+      </div>
     </section>
   </main>
   <script src="/app.js"></script>

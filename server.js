@@ -86,7 +86,7 @@ app.post("/api/stock-adjustments", (req, res) => {
         : String(req.body.serials || "")
             .split(",")
             .map(s => s.trim())
-            .filter(Boolean)
+            .filter(Boolean),
       lot: req.body.lot
         ? {
             batch_code: String(req.body.lot.batch_code || ""),
@@ -192,10 +192,15 @@ import {
   deleteProductVendor,
   listBom,
   upsertBomItem,
-  deleteBomItem
+  deleteBomItem,
+  listAllVendors
 } from "./db.js";
 
 import { listStockLevelsByProduct } from "./db.js";
+import { listSalesOrders, listSalesOrderItems, createSalesOrder, listPayments, createPayment } from "./db.js";
+import { listPurchaseOrders, listPurchaseOrderItems, createPurchaseOrder } from "./db.js";
+import { listVendors, getVendor, createVendor, updateVendor } from "./db.js";
+import { listCustomers, getCustomer, createCustomer, updateCustomer } from "./db.js";
 
 app.get("/api/products/:id/stock-levels", (req, res) => {
   const id = Number(req.params.id);
@@ -246,6 +251,98 @@ app.delete("/api/bom/:itemId", (req, res) => {
     const iid = Number(req.params.itemId);
     const result = deleteBomItem(iid);
     res.json(result);
+  } catch (e) {
+    res.status(400).json({ error: e.message || String(e) });
+  }
+});
+
+app.get("/api/vendors", (req, res) => {
+  res.json(listVendors());
+});
+app.get("/api/vendors/:id", (req, res) => {
+  const id = Number(req.params.id);
+  res.json(getVendor(id));
+});
+app.post("/api/vendors", (req, res) => {
+  try {
+    const v = createVendor(req.body || {});
+    res.status(201).json(v);
+  } catch (e) {
+    res.status(400).json({ error: e.message || String(e) });
+  }
+});
+app.put("/api/vendors/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const v = updateVendor(id, req.body || {});
+    res.json(v);
+  } catch (e) {
+    res.status(400).json({ error: e.message || String(e) });
+  }
+});
+
+app.get("/api/sales-orders", (req, res) => {
+  res.json(listSalesOrders());
+});
+app.get("/api/sales-order-items", (req, res) => {
+  res.json(listSalesOrderItems());
+});
+app.post("/api/sales-orders", (req, res) => {
+  try {
+    const row = createSalesOrder(req.body || {});
+    res.status(201).json(row);
+  } catch (e) {
+    res.status(400).json({ error: e.message || String(e) });
+  }
+});
+app.get("/api/payments", (req, res) => {
+  res.json(listPayments());
+});
+app.post("/api/payments", (req, res) => {
+  try {
+    const row = createPayment(req.body || {});
+    res.status(201).json(row);
+  } catch (e) {
+    res.status(400).json({ error: e.message || String(e) });
+  }
+});
+
+app.get("/api/purchase-orders", (req, res) => {
+  res.json(listPurchaseOrders());
+});
+app.get("/api/purchase-orders/:id/items", (req, res) => {
+  const id = Number(req.params.id);
+  res.json(listPurchaseOrderItems(id));
+});
+app.post("/api/purchase-orders", (req, res) => {
+  try {
+    const row = createPurchaseOrder(req.body || {});
+    res.status(201).json(row);
+  } catch (e) {
+    res.status(400).json({ error: e.message || String(e) });
+  }
+});
+
+app.get("/api/customers", (req, res) => {
+  res.json(listCustomers());
+});
+app.get("/api/customers/:id", (req, res) => {
+  const id = Number(req.params.id);
+  res.json(getCustomer(id));
+});
+app.post("/api/customers", (req, res) => {
+  try {
+    const v = createCustomer(req.body || {});
+    res.status(201).json(v);
+  } catch (e) {
+    res.status(400).json({ error: e.message || String(e) });
+  }
+});
+app.put("/api/customers/:id", (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const v = updateCustomer(id, req.body || {});
+    res.json(v);
   } catch (e) {
     res.status(400).json({ error: e.message || String(e) });
   }
