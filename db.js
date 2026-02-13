@@ -952,7 +952,6 @@ export function listPurchaseOrderItems(order_id) {
 export function listVendors() {
   return queryAll(`SELECT * FROM vendors ORDER BY name ASC`, []);
 }
-export function getVendor(id) {
 export function listCustomers() {
   return queryAll(`SELECT * FROM customers ORDER BY name ASC`, []);
 }
@@ -997,19 +996,19 @@ export function updateCustomer(id, payload = {}) {
   if (!existing) throw new Error("Customer not found");
   const now = new Date().toISOString();
   const row = {
-    name: String(payload.name ?? existing.name).trim(),
-    balance: Number(payload.balance ?? existing.balance || 0),
-    contact: String(payload.contact ?? existing.contact || ""),
-    phone: String(payload.phone ?? existing.phone || ""),
-    fax: String(payload.fax ?? existing.fax || ""),
-    email: String(payload.email ?? existing.email || ""),
-    website: String(payload.website ?? existing.website || ""),
-    currency: String(payload.currency ?? existing.currency || "Philippine Peso (Php)"),
-    discount: Number(payload.discount ?? existing.discount || 0),
-    payment_terms: String(payload.payment_terms ?? existing.payment_terms || ""),
-    taxing_scheme: String(payload.taxing_scheme ?? existing.taxing_scheme || ""),
-    tax_exempt_no: String(payload.tax_exempt_no ?? existing.tax_exempt_no || ""),
-    business_address: String(payload.business_address ?? existing.business_address || ""),
+    name: String((payload.name !== undefined && payload.name !== null) ? payload.name : existing.name).trim(),
+    balance: Number((payload.balance !== undefined && payload.balance !== null) ? payload.balance : (existing.balance || 0)),
+    contact: String((payload.contact !== undefined && payload.contact !== null) ? payload.contact : (existing.contact || "")),
+    phone: String((payload.phone !== undefined && payload.phone !== null) ? payload.phone : (existing.phone || "")),
+    fax: String((payload.fax !== undefined && payload.fax !== null) ? payload.fax : (existing.fax || "")),
+    email: String((payload.email !== undefined && payload.email !== null) ? payload.email : (existing.email || "")),
+    website: String((payload.website !== undefined && payload.website !== null) ? payload.website : (existing.website || "")),
+    currency: String((payload.currency !== undefined && payload.currency !== null) ? payload.currency : (existing.currency || "Philippine Peso (Php)")),
+    discount: Number((payload.discount !== undefined && payload.discount !== null) ? payload.discount : (existing.discount || 0)),
+    payment_terms: String((payload.payment_terms !== undefined && payload.payment_terms !== null) ? payload.payment_terms : (existing.payment_terms || "")),
+    taxing_scheme: String((payload.taxing_scheme !== undefined && payload.taxing_scheme !== null) ? payload.taxing_scheme : (existing.taxing_scheme || "")),
+    tax_exempt_no: String((payload.tax_exempt_no !== undefined && payload.tax_exempt_no !== null) ? payload.tax_exempt_no : (existing.tax_exempt_no || "")),
+    business_address: String((payload.business_address !== undefined && payload.business_address !== null) ? payload.business_address : (existing.business_address || "")),
     updated_at: now
   };
   run(

@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
+import { spawn } from "child_process";
 import {
   listProducts,
   createProduct,
@@ -28,6 +29,14 @@ app.use(express.json());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 app.use(express.static(path.join(__dirname, "public")));
+try {
+  const child = spawn(process.execPath, [path.join(__dirname, "tools", "auto-sync.js")], {
+    cwd: __dirname,
+    stdio: "ignore",
+    detached: true
+  });
+  child.unref();
+} catch {}
 
 app.get("/api/products", (req, res) => {
   res.json(listProducts());

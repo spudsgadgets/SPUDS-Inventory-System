@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "sync": "node tools/auto-sync.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
