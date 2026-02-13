@@ -17,3 +17,5 @@ coverage/
 /SPUDS-Inventory-System/
 /.vercel/
 /.netlify/
+data.sqlite
+/SPUDS-Inventory-System-1/
