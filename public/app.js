@@ -534,7 +534,8 @@ async function refresh() {
   const orders = await (await fetch("/api/sales-orders")).json();
   const orderItems = await (await fetch("/api/sales-order-items")).json();
   const payments = await (await fetch("/api/payments")).json();
-  renderDashboard({ products, movements, orders, orderItems, payments });
+  dashData = { products, movements, orders, orderItems, payments };
+  renderDashboard(dashData);
 }
 
 const addProductForm = document.getElementById("addProductForm");
@@ -799,6 +800,7 @@ if (batchForm) {
 initTabs();
 refresh();
 
+let dashData = null;
 function renderDashboard({ products, movements, orders, orderItems, payments }) {
   drawTimelineFromOrders(orderItems, payments);
   renderOutstandingTilesFromData({ products, orders });
@@ -811,13 +813,30 @@ function drawTimelineFromOrders(orderItems, payments) {
   const ctx = canvas.getContext("2d");
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const now = new Date();
-  const start = new Date(now);
-  start.setMonth(start.getMonth() - 3);
+  const dateRange = (document.getElementById("dashDateRange")?.value || "Last 90 Days");
+  const groupBy = (document.getElementById("dashGroupBy")?.value || "Months");
+  const selected = (document.getElementById("dashLines")?.value || "All");
   const months = [];
-  for (let i=2;i>=0;i--) {
-    const d = new Date(now);
-    d.setMonth(d.getMonth() - i);
-    months.push({ key: `${d.getFullYear()}-${d.getMonth()+1}`, label: d.toLocaleString(undefined, { month: 'short' }) });
+  if (groupBy === "Months") {
+    let count = 3;
+    if (dateRange === "Last 30 Days") count = 2;
+    if (dateRange === "Last 90 Days") count = 3;
+    if (dateRange === "Year to Date") count = now.getMonth() + 1;
+    for (let i=count-1;i>=0;i--) {
+      const d = new Date(now);
+      d.setMonth(d.getMonth() - i);
+      months.push({ key: `${d.getFullYear()}-${d.getMonth()+1}`, label: d.toLocaleString(undefined, { month: 'short' }) });
+    }
+  } else {
+    let count = 12;
+    if (dateRange === "Last 30 Days") count = 4;
+    if (dateRange === "Last 90 Days") count = 12;
+    if (dateRange === "Year to Date") count = Math.max(4, Math.ceil((now.getDate() + (now.getMonth()*30)) / 7));
+    for (let i=count-1;i>=0;i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (i*7));
+      months.push({ key: `${d.getFullYear()}-${d.getMonth()+1}`, label: d.toLocaleDateString(undefined,{ month:'short', day:'numeric'}) });
+    }
   }
   const salesByMonth = {};
   const cogsByMonth = {};
@@ -878,25 +897,35 @@ function drawTimelineFromOrders(orderItems, payments) {
       cogs: Math.round(Math.abs(c) / maxAbs * (originY - 40)),
       profit: Math.round(Math.abs(p) / maxAbs * (originY - 40))
     };
-    ctx.fillStyle = "#22c55e";
-    ctx.fillRect(x0, originY - heights.sales, barWidth, heights.sales);
-    ctx.fillStyle = "#f59e0b";
-    ctx.fillRect(x0 + barWidth + 6, originY - heights.cogs, barWidth, heights.cogs);
-    ctx.fillStyle = "#38bdf8";
-    if (p >= 0) {
-      ctx.fillRect(x0 + 2*barWidth + 12, originY - heights.profit, barWidth, heights.profit);
-    } else {
-      ctx.fillRect(x0 + 2*barWidth + 12, originY, barWidth, -heights.profit);
+    if (selected === "All" || selected === "Sales Completed") {
+      ctx.fillStyle = "#22c55e";
+      ctx.fillRect(x0, originY - heights.sales, barWidth, heights.sales);
+    }
+    if (selected === "All" || selected === "Cost of Goods Sold") {
+      ctx.fillStyle = "#f59e0b";
+      ctx.fillRect(x0 + barWidth + 6, originY - heights.cogs, barWidth, heights.cogs);
+    }
+    if (selected === "All" || selected === "Sales Profit") {
+      ctx.fillStyle = "#38bdf8";
+      if (p >= 0) {
+        ctx.fillRect(x0 + 2*barWidth + 12, originY - heights.profit, barWidth, heights.profit);
+      } else {
+        ctx.fillRect(x0 + 2*barWidth + 12, originY, barWidth, -heights.profit);
+      }
     }
     ctx.fillStyle = "#475569";
     ctx.fillText(m.label, x0 + 4, originY + 14);
   });
-  ctx.fillStyle = "#84cc16";
-  const hCust = Math.round(Math.abs(dueCustomer) / maxAbs * (originY - 40));
-  ctx.fillRect(canvas.width - 160, originY - hCust, barWidth, hCust);
-  ctx.fillStyle = "#fb923c";
-  const hVend = Math.round(Math.abs(dueVendor) / maxAbs * (originY - 40));
-  ctx.fillRect(canvas.width - 130, originY - hVend, barWidth, hVend);
+  if (selected === "All" || selected === "Customer Payments Due") {
+    ctx.fillStyle = "#84cc16";
+    const hCust = Math.round(Math.abs(dueCustomer) / maxAbs * (originY - 40));
+    ctx.fillRect(canvas.width - 160, originY - hCust, barWidth, hCust);
+  }
+  if (selected === "All" || selected === "Vendor Payments Due") {
+    ctx.fillStyle = "#fb923c";
+    const hVend = Math.round(Math.abs(dueVendor) / maxAbs * (originY - 40));
+    ctx.fillRect(canvas.width - 130, originY - hVend, barWidth, hVend);
+  }
 }
 
 function renderOutstandingTilesFromData({ products, orders }) {
@@ -946,6 +975,7 @@ document.addEventListener("click", (e) => {
   const t = e.target;
   if (t.classList.contains("shortcut") && t.dataset.tabTarget) {
     const target = t.dataset.tabTarget;
+    if (target === "dashboard" && window.setActiveTop) window.setActiveTop("dashboard");
     const tabs = document.querySelectorAll(".tab");
     const panels = document.querySelectorAll(".tab-panel");
     tabs.forEach(x => x.classList.remove("active"));
@@ -1085,7 +1115,14 @@ document.addEventListener("click", (e) => {
     });
   }
   const addBtn = document.getElementById("addTabBtn");
-  if (addBtn) addBtn.addEventListener("click", () => openDynamicTab("dashboard", "Dashboard"));
+  if (addBtn) addBtn.addEventListener("click", () => setActiveTop("home"));
+  const linesSel = document.getElementById("dashLines");
+  const dateSel = document.getElementById("dashDateRange");
+  const groupSel = document.getElementById("dashGroupBy");
+  function reRender() { if (dashData) renderDashboard(dashData); }
+  if (linesSel) linesSel.addEventListener("change", reRender);
+  if (dateSel) dateSel.addEventListener("change", reRender);
+  if (groupSel) groupSel.addEventListener("change", reRender);
   setActiveTop("home");
   window.setActiveTop = setActiveTop;
   window.openDynamicTab = openDynamicTab;
@@ -1330,6 +1367,22 @@ async function initOrderSlipPage() {
   const listEl = document.getElementById("soOrderList");
   if (!listEl) return;
   function fmt(n){ return "Php" + Number(n||0).toLocaleString(undefined,{ minimumFractionDigits:2, maximumFractionDigits:2 }); }
+  const custEl = document.getElementById("soCustomer");
+  async function soAutofillFromCustomer() {
+    const name = custEl?.value || "";
+    if (!name) return;
+    const rows = await api.customers();
+    const c = rows.find(r => String(r.name||"").toLowerCase() === String(name||"").toLowerCase());
+    if (!c) return;
+    const set = (id,val)=>{ const el=document.getElementById(id); if(el) el.value = val; };
+    set("soContact", c.contact || "");
+    set("soPhone", c.phone || "");
+    const addrEl = document.getElementById("soAddress"); if (addrEl) addrEl.value = c.business_address || "";
+  }
+  if (custEl) {
+    custEl.addEventListener("change", () => { soAutofillFromCustomer(); });
+    custEl.addEventListener("blur", () => { soAutofillFromCustomer(); });
+  }
   async function refreshList() {
     const qs = (document.getElementById("soSearchOrder")?.value || "").toLowerCase();
     const qc = (document.getElementById("soSearchCustomer")?.value || "").toLowerCase();
@@ -1348,7 +1401,15 @@ async function initOrderSlipPage() {
         const ord = (await api.salesOrders()).find(o=>o.id===id);
         if (!ord) return;
         document.getElementById("soNumber").textContent = ord.order_number || "";
-        document.getElementById("soCustomer")?.setAttribute("value", ord.customer || "");
+        const cEl = document.getElementById("soCustomer"); if (cEl) cEl.value = ord.customer || "";
+        const rows = await api.customers();
+        const c = rows.find(r=>String(r.name||"").toLowerCase()===String(ord.customer||"").toLowerCase());
+        if (c) {
+          const set = (id,val)=>{ const el=document.getElementById(id); if(el) el.value = val; };
+          set("soContact", c.contact || "");
+          set("soPhone", c.phone || "");
+          const addrEl = document.getElementById("soAddress"); if (addrEl) addrEl.value = c.business_address || "";
+        }
         const items = (await (await fetch(`/api/sales-order-items`)).json()).filter(it=>Number(it.order_id||0)===id);
         const sub = items.reduce((s,it)=>s+Number(it.line_total||0),0);
         const total = sub;

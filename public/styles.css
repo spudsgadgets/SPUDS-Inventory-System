@@ -42,8 +42,8 @@ aside { background: #fff; border: 1px solid #d9dee7; border-radius: 6px; padding
 .connector { height: 1px; background: repeating-linear-gradient(to right, #f59e0b 0 10px, transparent 10px 20px); }
 .flow-links { margin-top: 6px; font-size: 12px; color: #334155; display: grid; gap: 2px; }
 .flow-link { cursor: pointer; text-decoration: underline; }
-.topbar { background: #f59e0b; color: #fff; padding: 6px 12px; }
-.top-tabs { display: flex; gap: 6px; }
+.topbar { background: #f59e0b; color: #fff; padding: 6px 12px; display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto; }
+.top-tabs { display: flex; gap: 6px; flex-wrap: nowrap; white-space: nowrap; }
 .top-tab { background: #f1f5f9; color: #0f172a; border: 1px solid #d9dee7; border-radius: 6px; padding: 6px 10px; cursor: pointer; }
 .top-tab.active { background: #fff; }
 .dyn-tabs { display: inline-flex; gap: 6px; margin-left: 8px; align-items: center; }
