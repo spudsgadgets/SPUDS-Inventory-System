@@ -4,8 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node tools/start-server.js",
-    "sync": "node tools/auto-sync.js"
+    "start": "node server.js",
+    "sync": "echo Auto-sync disabled",
+    "debug": "node --inspect=127.0.0.1:9229 server.js",
+    "dev": "node --watch server.js",
+    "stop": "node tools/kill-port.js 3000"
   },
   "dependencies": {
     "cors": "^2.8.5",
